@@ -78,39 +78,32 @@ class LambdaDataSet:
             return filter_df
 
 
-def sort_G(g_df, df):
-    cols = df.columns[5:]
-    important_g = pd.DataFrame(columns=pd.MultiIndex.from_product([cols, ['UID', 'Effect']]), index=False)
-    for col, sub in important_g.columns:
-        if sub == 'UID':
-            important_g[(col, sub)] = g_df['UID'].copy()
-        else:
-            important_g[(col, sub)] = g_df[col]
-        print(important_g)
-        # return important_g
-        # important_g[col] = g_df[col[]]
-    # temp = pd.DataFrame()
-    # temp = pd.DataFrame(columns=pd.MultiIndex.from_product([[1], ['UID', 'Effect']]))
-    # for col in important_g.columns:
-    #     if col[1] == 'UID':
-    #         temp[(1, 'UID')] = g_df['UID']
-    #     if col[1] == 'Effect':
-    #         temp[(1, 'Effect')] = g_df[col[0]]
-    #         print(temp)
-    #         temp = temp.sort_values(by=temp[(1, 'UID')].apply(lambda x: x[(1, 'Effect')]), inplace=True)
-    #         print(temp)
-    #         important_g[col] = temp
-    #         print(important_g[col])
-    #         temp = pd.DataFrame(columns=pd.MultiIndex.from_product([[1], ['UID', 'Effect']]))
-            # important_g[col] = g_df[col[0]]
-            # important_g[col[0]] = important_g[col[0]].sort_values(by=col[1])
+def sort_G_values(g_df, cols):
+    """
+        This function accepts columns representing processes and sorts for each process its proteins.
 
-            # print(temp[(col[0], 'UID')], temp[(col[0], 'Effect')])
-            # important_g[col[0]] = temp
-            # print(important_g[col[0]])
-            # important_g[(col[0], 'Effect')] = temp[(col[0], 'Effect')]
-            # print(important_g[col[0]])
-            # temp = pd.DataFrame()
+        Arguments:
+            g_df (pandas.DataFrame): The G_values DataFrame.
+            cols (list): The process to sort it's G_values.
+
+        Returns:
+            pandas.DataFrame: Sorted G_values.
+    """
+    important_g = pd.DataFrame(columns=pd.MultiIndex.from_product([cols, ['UID', 'Effect']]))
+    names_g, values_g = {}, {}
+    for col in important_g.columns:
+        if col[1] == 'UID':
+            names_g = g_df[col[1]].to_dict()
+        else:
+            values_g = g_df[col[0]].to_dict()
+            sorted_values_g = dict(sorted(values_g.items(), key=lambda item: item[1]))
+            list_values_g = list(sorted_values_g.values())
+
+            sorted_names_g = dict(sorted(names_g.items(), key=lambda item: sorted_values_g[item[0]]))
+            list_names_g = list(sorted_names_g.values())
+
+            important_g[(col[0], 'UID')] = list_names_g
+            important_g[col] = list_values_g
 
     return important_g
 
@@ -132,9 +125,9 @@ def create_csv(df, name='default_name', path='/'):
         if not os.path.exists(folder):
             os.makedirs(folder)
         path = folder + '/' + name + '.csv'  # Save the data frame to the CSV file
-        df.to_csv(path, index=False)
+        df.to_csv(path)
     else:
-        df.to_csv(path + '/' + name + '.csv', index=False)
+        df.to_csv(path + '/' + name + '.csv')
     print(f"The csv '{name}' created successfully")
 
 
@@ -149,7 +142,7 @@ def create_new_sheet(df, path, sheet_name):
     """
     if not df.empty:
         with pd.ExcelWriter(path, mode='a') as writer:
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            df.to_excel(writer, sheet_name=sheet_name)
         print(f"The sheet '{sheet_name}' created successfully")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
