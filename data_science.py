@@ -1,7 +1,10 @@
+import itertools
+import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
 import exceptions as e
+from jinja2 import Environment, FileSystemLoader
 
 
 def is_valid_L(df):
@@ -20,7 +23,7 @@ def is_valid_L(df):
         raise e.InvalidDataSetException("column 1 should be 'cell_line_name'")
     if df.columns[2] != 'compound_name':
         raise e.InvalidDataSetException("column 2 should be 'compound_name'")
-    if df.columns[3] != 'D2_D3':
+    if df.columns[3] != '2D_3D':
         raise e.InvalidDataSetException("column 3 should be 'D2_D3'")
     if df.columns[4] != 'dosage':
         raise e.InvalidDataSetException("column 3 should be 'dosage'")
@@ -80,6 +83,7 @@ def important_L(df, err_limit, threshold):
     """
     is_valid_L(df)
     new_df = df.loc[:, :5].copy()
+    new_df['time'] = new_df['time'].apply(lambda x: '0hr' if x == 0 else x)
     for i in range(1, len(df.columns) - 5):
         count = 0
         for cell in df[i]:
@@ -122,7 +126,7 @@ def plot_G_values(title, uid, values, path):
     """
     is_valid_path(path)
     plt.title(title)
-    plt.figure(figsize=(25, 15))
+    plt.figure(figsize=(50, 30))
     plt.scatter(uid, values)
     plt.xticks(uid, [f'{name} ({i})' for i, name in enumerate(uid)], rotation=90, fontsize=6)
     plt.ylabel('Effect')
@@ -130,7 +134,7 @@ def plot_G_values(title, uid, values, path):
     for i, txt in enumerate(range(len(uid))):
         plt.text(uid[i], values[i] + 0.002, str(i), fontsize=5)
 
-    plt.savefig(path + '/' + f'{title}.jpg', dpi=300)
+    plt.savefig(path + '/' + f'{title}.SVG', dpi=300)
     plt.close()
 
 
@@ -167,6 +171,94 @@ def sort_plot_G_values(g_df, cols, path):
             important_g[col] = list_values_g
 
     return important_g
+
+
+def compare_pairs(df, cell_name, compound_list):
+    df = df.loc[df['cell_line_name'] == cell_name]
+    df = df.loc[df['compound_name'].isin(compound_list)]
+
+    # Split 'barcode' column and create new DataFrame
+    barcode_df = df['barcode'].str.split(expand=True).astype(int)
+    barcode_len = len(df.columns) - len(barcode_df.columns)
+    barcode_df.columns = [f'#{df.columns[i + barcode_len]}' for i in range(len(barcode_df.columns))]
+
+    # Drop 'barcode' column and concatenate new columns at beginning of DataFrame
+    df = df.drop(columns=['barcode'])
+    df = pd.concat([barcode_df, df], axis=1)
+
+    unique_compounds = df['compound_name'].unique()
+    unique_times = df['time'].unique()
+    comp_dict = {}
+    comp_list = []
+    for i, j in itertools.combinations(unique_compounds, 2):
+        for t1, t2 in itertools.product(unique_times, repeat=2):
+            df_i_j_t1 = df.loc[(df['compound_name'] == i) & (df['time'] == t1)]
+            df_i_j_t2 = df.loc[(df['compound_name'] == j) & (df['time'] == t2)]
+            if not (df_i_j_t1.empty or df_i_j_t2.empty):
+                comp_dict[(cell_name, i, j, t1, t2)] = pd.concat([df_i_j_t1, df_i_j_t2])
+
+    for i, key in enumerate(comp_dict):
+        comp_list.append(comp_dict[key])
+        if i < len(comp_dict) - 1:
+            comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=comp_dict[key].columns))
+    pairs_df = pd.concat(comp_list, sort=False)
+
+    return pairs_df
+
+
+# def compare_pairs(df, cell_name, compound_list):
+#     df = df.loc[df['cell_line_name'] == cell_name]
+#     df = df.loc[df['compound_name'].isin(compound_list)]
+#     unique_compounds = df['compound_name'].unique()
+#     unique_times = df['time'].unique()
+#     comp_dict = {}
+#     comp_list = []
+#     for i, j in itertools.combinations(unique_compounds, 2):
+#         for t1, t2 in itertools.product(unique_times, repeat=2):
+#             df_i_j_t1 = df.loc[(df['compound_name'] == i) & (df['time'] == t1)]
+#             df_i_j_t2 = df.loc[(df['compound_name'] == j) & (df['time'] == t2)]
+#             if not (df_i_j_t1.empty or df_i_j_t2.empty):
+#                 comp_dict[(cell_name, i, j, t1, t2)] = pd.concat([df_i_j_t1, df_i_j_t2])
+#
+#     for i, key in enumerate(comp_dict):
+#         comp_list.append(comp_dict[key])
+#         if i < len(comp_dict) - 1:
+#             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=comp_dict[key].columns))
+#     pairs_df = pd.concat(comp_list)
+#     return pairs_df
+
+# def compare_pairs(df, cell_name, compound_list):
+#     df = df.loc[df['cell_line_name'] == cell_name]
+#     df = df.loc[df['compound_name'].isin(compound_list)]
+#     unique_compounds = df['compound_name'].unique()
+#     comp_dict = {}
+#     comp_list = []
+#     for i, j in itertools.combinations(unique_compounds, 2):
+#         df_i_j = df.loc[df['compound_name'].isin([i, j])]
+#         comp_dict[(cell_name, i, j)] = df_i_j
+#
+#     for i, key in enumerate(comp_dict):
+#         comp_list.append(comp_dict[key])
+#         if i < len(comp_dict) - 1:
+#             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=comp_dict[key].columns))
+#     pairs_df = pd.concat(comp_list)
+#     return pairs_df
+
+# def compare_pairs(df, cell_col, compound_col):
+#     unique_name = df[compound_col].unique()
+#     comp_dict = {}
+#     comp_list = []
+#     for i, j in itertools.combinations(unique_name, 2):
+#         if 'CONTROL' in [i, j] or 'DMSO' in [i, j]:
+#             df_i_j = df.loc[df[compound_col].isin([i, j])]
+#             comp_dict[(i, j)] = df_i_j
+#
+#     for i, key in enumerate(comp_dict):
+#         comp_list.append(comp_dict[key])
+#         if i < len(comp_dict) - 1:
+#             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=comp_dict[key].columns))
+#     pairs_df = pd.concat(comp_list)
+#     return pairs_df
 
 
 def create_csv(df, name='default_name', path=None):
