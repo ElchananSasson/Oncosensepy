@@ -2,8 +2,8 @@ import pandas as pd
 import data_science as ds
 
 if __name__ == '__main__':
-    data_set_num = '66'
-    data_set_path = r'C:\Users\elchanans\OneDrive - Mobileye\Desktop\MyComputer\Studies\Final Project\data set\Table1_myData' + data_set_num + '.xlsx'
+    data_name = 'Table1_myData66'
+    data_set_path = r'Data/' + data_name + '.xlsx'
 
     l_df = pd.read_excel(data_set_path, sheet_name='L').fillna(0)
     g_df = pd.read_excel(data_set_path, sheet_name='G').fillna(0)
