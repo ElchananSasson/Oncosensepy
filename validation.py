@@ -19,7 +19,7 @@ def is_valid_L(df):
     if df.columns[2] != 'compound_name':
         raise e.InvalidDataSetException("column 2 should be 'compound_name'")
     if df.columns[3] != '2D_3D':
-        raise e.InvalidDataSetException("column 3 should be 'D2_D3'")
+        raise e.InvalidDataSetException("column 3 should be '2D_3D'")
     if df.columns[4] != 'dosage':
         raise e.InvalidDataSetException("column 3 should be 'dosage'")
     if df.columns[5] != 'time':
@@ -60,3 +60,9 @@ def is_valid_G(df):
         raise e.InvalidDataSetException("column 0 should be 'UID'")
 
     return True
+
+
+def is_cols_in_df(df, cols_list):
+    all_exist = all(col in df.columns for col in cols_list)
+    if not all_exist:
+        raise e.InvalidColumnsException("One or more columns do not exist in data")
