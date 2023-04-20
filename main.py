@@ -18,8 +18,10 @@ if __name__ == '__main__':
     # filter_time = ds.filter_by_col(filter_dosage, 'time', ['0hr', '24hr'])
     # ds.create_new_sheet(filter_time, data_set_path, 'filter_by_dosage_time')
     #
-    important_g = ds.sort_plot_G_values(g_df, important_l.columns[6:], r'G_plot')
-    ds.create_new_sheet(important_g, data_set_path, 'Sorted_G')
+    # important_g = ds.sort_plot_G_values(g_df, important_l.columns[6:], r'G_plot')
+    # ds.create_new_sheet(important_g, data_set_path, 'Sorted_G')
 
-    # comp = ds.compare_pairs(important_l, 'MCF7', ['CONTROL', 'DMSO', 'GSK1838705A', 'LAPATINIB'])
-    # ds.create_new_sheet(comp, data_set_path, 'MCF7_compare')
+    pairs_dict = ds.create_pairs_df_dict(important_l, 'MCF7', ['CONTROL', 'DMSO'], ['GSK1838705A', 'LAPATINIB'], 'time')
+    pairs_df = ds.create_pairs_df(pairs_dict)
+    ds.analyse_pairs(pairs_dict)
+    # ds.create_new_sheet(pairs_df, data_set_path, 'MCF7_compare')
