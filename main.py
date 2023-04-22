@@ -2,7 +2,7 @@ import pandas as pd
 import data_science as ds
 
 if __name__ == '__main__':
-    data_name = 'Table1_myData66'
+    data_name = 'Table1_myData27'
     data_set_path = r'Data/' + data_name + '.xlsx'
 
     l_df = pd.read_excel(data_set_path, sheet_name='L').fillna(0)
@@ -21,7 +21,10 @@ if __name__ == '__main__':
     # important_g = ds.sort_plot_G_values(g_df, important_l.columns[6:], r'G_plot')
     # ds.create_new_sheet(important_g, data_set_path, 'Sorted_G')
 
-    pairs_dict = ds.create_pairs_df_dict(important_l, 'MCF7', ['CONTROL', 'DMSO'], ['GSK1838705A', 'LAPATINIB'], 'time')
-    pairs_df = ds.create_pairs_df(pairs_dict)
+    # pairs_dict = ds.create_pairs_df_dict(important_l, 'MCF7', ['CONTROL', 'DMSO'], ['GSK1838705A', 'LAPATINIB'],
+    #                                      'time')  # data66
+    pairs_dict = ds.create_pairs_df_dict(important_l, 'MDAMB468', ['CONTROL', 'DMSO'],
+                                         ['MEK inhibitor-03', 'AKT inhibitor-01'], 'time')  # data27
     ds.analyse_pairs(pairs_dict)
-    # ds.create_new_sheet(pairs_df, data_set_path, 'MCF7_compare')
+    pairs_df = ds.create_pairs_df(pairs_dict)
+    ds.create_new_sheet(pairs_df, data_set_path, 'MCF7_compare')
