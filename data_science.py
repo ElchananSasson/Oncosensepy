@@ -116,15 +116,20 @@ def sort_plot_G_values(g_df, cols, path=''):
 
 
 def create_pairs_df_dict(df, cell_name, control_list, inhibitor_list, fixed_col='time'):
+    # Filter the input dataframe to only include rows with the specified cell name
     df = df.loc[df['cell_line_name'] == cell_name]
+
     full_list = control_list + inhibitor_list
+
+    # Filter the dataframe to only include rows with compound names in the full list
     df = df.loc[df['compound_name'].isin(full_list)]
+
+    # If the filtered dataframe is empty, print an error message and exit the program
     if df.empty:
         print(f'There is a problem here: {control_list} or here: {inhibitor_list}')
         sys.exit()
 
     pairs_dict = {}
-
     # Pairs of control_list and inhibitor_list with same fixed_col
     for i, j in itertools.product(control_list, inhibitor_list):
         for col in df[fixed_col].unique():
@@ -145,24 +150,52 @@ def create_pairs_df_dict(df, cell_name, control_list, inhibitor_list, fixed_col=
     return pairs_dict
 
 
+def analyse_pairs(pairs_dict, p_value=0.05):
+    keys_to_remove = []
+    for key, df in pairs_dict.items():
+        col_names = df.columns.tolist()
+        time_col_idx = col_names.index('time')
+        analysis_cols = [c for c in col_names[time_col_idx + 1:]]
+
+        dfs_to_concat = []
+        for col in analysis_cols:
+            df_first = df.loc[df['compound_name'] == key[1], col]
+            df_second = df.loc[df['compound_name'] == key[2], col]
+
+            first_avg = df_first.mean()
+            second_avg = df_second.mean()
+
+            if abs(first_avg - second_avg) > p_value:
+                dfs_to_concat.append(df[[col]])
+
+        if len(dfs_to_concat) == 0:
+            keys_to_remove.append(key)
+        else:
+            new_df = pd.concat(dfs_to_concat, axis=1)
+            pairs_dict[key] = pd.concat(
+                [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
+
+    for key in keys_to_remove:
+        pairs_dict.pop(key)
+
+
 def create_pairs_df(pairs_dict):
     comp_list = []
-    for i, key in enumerate(pairs_dict):
-        comp_list.append(pairs_dict[key])
+    i = 0
+    for key, df in pairs_dict.items():
+        cols = df.columns.tolist()
+        df.iloc[0] = cols
+        comp_list.append(df)
         if i < len(pairs_dict) - 1:
             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=pairs_dict[key].columns))
+        i += 1
+
     pairs_df = pd.concat(comp_list, sort=False)
+    # pd.set_option("display.max_rows", None)  # Display all rows
+    # pd.set_option("display.max_columns", None)  # Display all columns
+    # print(pairs_df)
 
     return pairs_df
-
-
-def analyse_pairs(pairs_dict):
-    pd.set_option("display.max_rows", None)  # Display all rows
-    pd.set_option("display.max_columns", None)  # Display all columns
-    for key, df in pairs_dict.items():
-        print(f"Key: {key}")
-        print(df)
-    pass
 
 
 def create_csv(df, name='default_name', path=None):
