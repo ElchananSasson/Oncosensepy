@@ -150,7 +150,7 @@ def create_pairs_df_dict(df, cell_name, control_list, inhibitor_list, fixed_col=
     return pairs_dict
 
 
-def analyse_pairs(pairs_dict, p_value=0.05):
+def analyze_pairs(pairs_dict, p_value=0.05):
     keys_to_remove = []
     for key, df in pairs_dict.items():
         col_names = df.columns.tolist()

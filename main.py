@@ -25,6 +25,6 @@ if __name__ == '__main__':
     #                                      'time')  # data66
     pairs_dict = ds.create_pairs_df_dict(important_l, 'MDAMB468', ['CONTROL', 'DMSO'],
                                          ['MEK inhibitor-03', 'AKT inhibitor-01'], 'time')  # data27
-    ds.analyse_pairs(pairs_dict)
+    ds.analyze_pairs(pairs_dict)
     pairs_df = ds.create_pairs_df(pairs_dict)
     ds.create_new_sheet(pairs_df, data_set_path, 'MCF7_compare')
