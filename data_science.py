@@ -1,9 +1,9 @@
-import itertools
 import sys
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
 import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import itertools
 import validation as valid
 
 
