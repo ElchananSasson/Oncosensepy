@@ -108,11 +108,14 @@ def sort_plot_G_values(g_df, cols, path=''):
             list_names_g = list(sorted_names_g.values())
 
             plot_G_values(f'Process {col[0]}', list_names_g, list_values_g, path)
-
             important_g[(col[0], 'UID')] = list_names_g
             important_g[col] = list_values_g
 
     return important_g
+
+
+#             list_values_g contain lists, each one for proccess. for each of them, we need to divide for two,
+# calculate the distance between each 2 points, and find the egdes
 
 
 def pairs_df_to_dict(df, cell_name, control_list, inhibitor_list, fixed_col='time'):
@@ -283,3 +286,46 @@ def create_new_sheet(df, path, sheet_name):
         print(f"The sheet '{sheet_name}' created successfully")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
+
+
+
+def find_edges(g_df, cols):
+    important_g = pd.DataFrame(columns=pd.MultiIndex.from_product([cols, ['UID', 'Effect']]))
+    names_g, values_g = {}, {}
+    for col in important_g.columns:
+        if col[1] == 'UID':
+            names_g = g_df[col[1]].to_dict()
+        else:
+            values_g = g_df[col[0]].to_dict()
+            sorted_values_g = dict(sorted(values_g.items(), key=lambda item: item[1]))
+            list_values_g = list(sorted_values_g.values())
+
+            sorted_names_g = dict(sorted(names_g.items(), key=lambda item: sorted_values_g[item[0]]))
+            list_names_g = list(sorted_names_g.values())
+
+            #split the list into 2 lists
+            half_ind = len(list_values_g) // 2
+            first_half = list_values_g[:half_ind]
+            second_half = list_values_g[half_ind:]
+            distance, max = 0, 0
+            first_indices, second_indices = [], []
+            #find the max destination between 2 points and save their index and the value in first_indices
+            for i in range(1, len(first_half)):
+                distance = abs(abs(first_half[i]) - abs(first_half[i - 1]))
+                if distance > max:
+                    max = distance
+                    first_indices = [i - 1, i , max]
+            max = 0
+            # find the max destination between 2 points and save their index and the value in second_indices
+            for i in range(1, len(second_half)):
+                distance = abs(abs(second_half[i]) - abs(second_half[i - 1]))
+                if distance > max:
+                    max = distance
+                    second_indices = [i - 1, i, max]
+
+            print(first_indices, second_indices)
+            start_edge = list_names_g[: first_indices[1]]
+            end_edge = list_names_g[half_ind + second_indices[0]:]
+            print(start_edge)
+            print(end_edge)
+            print(("------------------------------------------------------"))

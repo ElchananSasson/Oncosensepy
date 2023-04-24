@@ -23,8 +23,11 @@ if __name__ == '__main__':
 
     # pairs_dict = ds.create_pairs_df_dict(important_l, 'MCF7', ['CONTROL', 'DMSO'], ['GSK1838705A', 'LAPATINIB'],
     #                                      'time')  # data66
-    pairs_dict = ds.pairs_df_to_dict(important_l, 'MDAMB468', ['CONTROL', 'DMSO'],
-                                         ['MEK inhibitor-03', 'AKT inhibitor-01'], 'time')  # data27
-    ds.analyze_pairs(pairs_dict, 0.5)
-    pairs_df = ds.create_pairs_df(pairs_dict)
-    ds.create_new_sheet(pairs_df, data_set_path, 'MDAMB468_compare')
+    # pairs_dict = ds.pairs_df_to_dict(important_l, 'MDAMB468', ['CONTROL', 'DMSO'],
+    #                                      ['MEK inhibitor-03', 'AKT inhibitor-01'], 'time')  # data27
+    # ds.analyze_pairs(pairs_dict, 0.5)
+    # pairs_df = ds.create_pairs_df(pairs_dict)
+    # ds.create_new_sheet(pairs_df, data_set_path, 'MDAMB468_compare')
+
+
+    # ds.find_edges(g_df, important_l.columns[6:])
