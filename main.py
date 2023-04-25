@@ -11,14 +11,14 @@ if __name__ == '__main__':
 
     important_l = ds.important_L(l_df, err_limit_lambda, 2)
     # ds.create_new_sheet(important_l, data_set_path, 'important_L')
-    #
+
     # filter_dosage = ds.filter_by_col(important_l, 'dosage', ['0.00001nm', '1nm', '40nm', '1uM'])
     # ds.create_new_sheet(filter_dosage, data_set_path, 'filter_by_dosage')
-    #
+
     # filter_time = ds.filter_by_col(filter_dosage, 'time', ['0hr', '24hr'])
     # ds.create_new_sheet(filter_time, data_set_path, 'filter_by_dosage_time')
-    #
-    # important_g = ds.sort_plot_G_values(g_df, important_l.columns[6:], r'G_plot')
+
+    # important_g = ds.sort_G_values(g_df, important_l.columns[6:], r'G_plot', save=True)
     # ds.create_new_sheet(important_g, data_set_path, 'Sorted_G')
 
     # pairs_dict = ds.create_pairs_df_dict(important_l, 'MCF7', ['CONTROL', 'DMSO'], ['GSK1838705A', 'LAPATINIB'],
@@ -28,3 +28,4 @@ if __name__ == '__main__':
     # ds.analyze_pairs(pairs_dict, 0.5)
     # pairs_df = ds.create_pairs_df(pairs_dict)
     # ds.create_new_sheet(pairs_df, data_set_path, 'MDAMB468_compare')
+
