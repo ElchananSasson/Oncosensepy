@@ -28,6 +28,3 @@ if __name__ == '__main__':
     # ds.analyze_pairs(pairs_dict, 0.5)
     # pairs_df = ds.create_pairs_df(pairs_dict)
     # ds.create_new_sheet(pairs_df, data_set_path, 'MDAMB468_compare')
-
-
-    # ds.find_edges(g_df, important_l.columns[6:])

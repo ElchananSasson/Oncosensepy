@@ -65,6 +65,7 @@ def plot_G_values(title, uid, values, path):
             path (str): The path to save the figures, if None the plots will be displayed one by one
     """
     valid.is_valid_path(path)
+
     plt.title(title)
     plt.figure(figsize=(50, 30))
     plt.scatter(uid, values)
@@ -73,6 +74,12 @@ def plot_G_values(title, uid, values, path):
 
     for i, txt in enumerate(range(len(uid))):
         plt.text(uid[i], values[i] + 0.002, str(i), fontsize=5)
+
+    start_edge, end_edge = find_edges(uid, values)
+    start_edge_indices = [uid.index(val) for val in start_edge]
+    end_edge_indices = [uid.index(val) for val in end_edge]
+    plt.scatter([uid[i] for i in start_edge_indices], [values[i] for i in start_edge_indices], color='red')
+    plt.scatter([uid[i] for i in end_edge_indices], [values[i] for i in end_edge_indices], color='red')
 
     plt.savefig(path + '/' + f'{title}.SVG', dpi=300)
     plt.close()
@@ -288,44 +295,38 @@ def create_new_sheet(df, path, sheet_name):
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
 
 
+def find_edges(list_names_g, list_values_g):
+    """
+       The function finds the start and end edges of a graph represented as a DataFrame.
 
-def find_edges(g_df, cols):
-    important_g = pd.DataFrame(columns=pd.MultiIndex.from_product([cols, ['UID', 'Effect']]))
-    names_g, values_g = {}, {}
-    for col in important_g.columns:
-        if col[1] == 'UID':
-            names_g = g_df[col[1]].to_dict()
-        else:
-            values_g = g_df[col[0]].to_dict()
-            sorted_values_g = dict(sorted(values_g.items(), key=lambda item: item[1]))
-            list_values_g = list(sorted_values_g.values())
+       Parameters:
+           list_values_g(List[float]): The list of the values
+           list_names_g(List[str]): The list of the names of the proteins
 
-            sorted_names_g = dict(sorted(names_g.items(), key=lambda item: sorted_values_g[item[0]]))
-            list_names_g = list(sorted_names_g.values())
+       Returns:
+           Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
+"""
 
-            #split the list into 2 lists
-            half_ind = len(list_values_g) // 2
-            first_half = list_values_g[:half_ind]
-            second_half = list_values_g[half_ind:]
-            distance, max = 0, 0
-            first_indices, second_indices = [], []
-            #find the max destination between 2 points and save their index and the value in first_indices
-            for i in range(1, len(first_half)):
-                distance = abs(abs(first_half[i]) - abs(first_half[i - 1]))
-                if distance > max:
-                    max = distance
-                    first_indices = [i - 1, i , max]
-            max = 0
-            # find the max destination between 2 points and save their index and the value in second_indices
-            for i in range(1, len(second_half)):
-                distance = abs(abs(second_half[i]) - abs(second_half[i - 1]))
-                if distance > max:
-                    max = distance
-                    second_indices = [i - 1, i, max]
+    # split the list into 2 lists
+    half_ind = len(list_values_g) // 2
+    first_half = list_values_g[:half_ind]
+    second_half = list_values_g[half_ind:]
+    distance, max = 0, 0
+    first_indices, second_indices = [], []
+    # find the max destination between 2 points and save their index and the value in first_indices
+    for i in range(1, len(first_half)):
+        distance = abs(abs(first_half[i]) - abs(first_half[i - 1]))
+        if distance > max:
+            max = distance
+            first_indices = [i - 1, i, max]
+    max = 0
+    # find the max destination between 2 points and save their index and the value in second_indices
+    for i in range(1, len(second_half)):
+        distance = abs(abs(second_half[i]) - abs(second_half[i - 1]))
+        if distance > max:
+            max = distance
+            second_indices = [i - 1, i, max]
 
-            print(first_indices, second_indices)
-            start_edge = list_names_g[: first_indices[1]]
-            end_edge = list_names_g[half_ind + second_indices[0]:]
-            print(start_edge)
-            print(end_edge)
-            print(("------------------------------------------------------"))
+    start_edge = list_names_g[: first_indices[1]]
+    end_edge = list_names_g[half_ind + second_indices[1]:]
+    return start_edge, end_edge
