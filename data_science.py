@@ -53,51 +53,94 @@ def filter_by_col(df, col, filter_list):
     return filter_df
 
 
-def plot_G_values(title, uid, values, path):
+def find_edges(list_names_g, list_values_g):
+    """
+       The function finds the start and end edges of a graph represented as a DataFrame.
+
+       Parameters:
+           list_values_g(List[float]): The list of the values
+           list_names_g(List[str]): The list of the names of the proteins
+
+       Returns:
+           Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
+    """
+
+    # split the list into 2 lists
+    half_ind = len(list_values_g) // 2
+    first_half = list_values_g[:half_ind]
+    second_half = list_values_g[half_ind:]
+    distance, max_distance = 0, 0
+    first_indices, second_indices = [], []
+
+    # find the max destination between 2 points and save their index and the value in first_indices
+    for i in range(1, len(first_half)):
+        distance = abs(abs(first_half[i]) - abs(first_half[i - 1]))
+        if distance > max_distance:
+            max_distance = distance
+            first_indices = [i - 1, i, max_distance]
+
+    # find the max destination between 2 points and save their index and the value in second_indices
+    max_distance = 0
+    for i in range(1, len(second_half)):
+        distance = abs(abs(second_half[i]) - abs(second_half[i - 1]))
+        if distance > max_distance:
+            max_distance = distance
+            second_indices = [i - 1, i, max_distance]
+
+    start_edge = list_names_g[: first_indices[1]]
+    end_edge = list_names_g[half_ind + second_indices[1]:]
+    return start_edge, end_edge
+
+
+def sort_G_values(g_df, cols, path='', save=False):
     """
         This function accepts columns representing processes and sorts for each process its proteins.
-        In addition, the function saves the plot of process
-
-        Arguments:
-            title (str): The plot title.
-            uid (list): The list of G_UID.
-            values (list): The list of G_values.
-            path (str): The path to save the figures, if None the plots will be displayed one by one
-    """
-    valid.is_valid_path(path)
-
-    plt.title(title)
-    plt.figure(figsize=(50, 30))
-    plt.scatter(uid, values)
-    plt.xticks(uid, [f'{name} ({i})' for i, name in enumerate(uid)], rotation=90, fontsize=6)
-    plt.ylabel('Effect')
-
-    for i, txt in enumerate(range(len(uid))):
-        plt.text(uid[i], values[i] + 0.002, str(i), fontsize=5)
-
-    start_edge, end_edge = find_edges(uid, values)
-    start_edge_indices = [uid.index(val) for val in start_edge]
-    end_edge_indices = [uid.index(val) for val in end_edge]
-    plt.scatter([uid[i] for i in start_edge_indices], [values[i] for i in start_edge_indices], color='red')
-    plt.scatter([uid[i] for i in end_edge_indices], [values[i] for i in end_edge_indices], color='red')
-
-    plt.savefig(path + '/' + f'{title}.SVG', dpi=300)
-    plt.close()
-
-
-def sort_plot_G_values(g_df, cols, path=''):
-    """
-        This function accepts columns representing processes and sorts for each process its proteins.
-        In addition, the function saves the plot of each process
+        In addition, the function saves the plot of each process if the 'save' argument is set to True.
+        Otherwise, the plots will be displayed one by one.
 
         Arguments:
             g_df (pandas.DataFrame): The G_values DataFrame.
-            cols (list): The process to sort it's G_values.
-            path (str): The path to save the figures, if None the plots will be displayed one by one
+            cols (list): The process to sort its G_values.
+            path (str): The path to save the figures. If not specified or set to an empty string (''),
+                        the function will not save the plots.
+            save (bool): If True, the function will save the plot of each process in the specified path.
 
         Returns:
             pandas.DataFrame: Sorted G_values.
     """
+
+    def plot_G_values(title, uid, values, save_path):
+        """
+            This function accepts columns representing processes and sorts for each process its proteins.
+            In addition, the function saves the plot of process
+
+            Arguments:
+                title (str): The plot title.
+                uid (list): The sorted list of G_UID.
+                values (list): The sorted list of G_values.
+                save_path (str): The path to save the figures, if None the plots will be displayed one by one
+        """
+        valid.is_valid_path(save_path)
+
+        plt.title(title)
+        plt.figure(figsize=(50, 30))
+        plt.scatter(uid, values)
+        plt.xticks(uid, [f'{name} ({i})' for i, name in enumerate(uid)], rotation=90, fontsize=6)
+        plt.ylabel('Effect')
+
+        for i, txt in enumerate(range(len(uid))):
+            plt.text(uid[i], values[i] + 0.002, str(i), fontsize=5)
+
+        start_edge, end_edge = find_edges(uid, values)
+        start_edge_indices = [uid.index(val) for val in start_edge]
+        end_edge_indices = [uid.index(val) for val in end_edge]
+        plt.scatter([uid[i] for i in start_edge_indices], [values[i] for i in start_edge_indices], color='red')
+        plt.scatter([uid[i] for i in end_edge_indices], [values[i] for i in end_edge_indices], color='red')
+
+        plt.savefig(save_path + '/' + f'{title}.SVG', dpi=300)
+        plt.close()
+
+    # plot_G_values function
     if path == '':
         path = os.getcwd()
     valid.is_valid_path(path)
@@ -114,15 +157,13 @@ def sort_plot_G_values(g_df, cols, path=''):
             sorted_names_g = dict(sorted(names_g.items(), key=lambda item: sorted_values_g[item[0]]))
             list_names_g = list(sorted_names_g.values())
 
-            plot_G_values(f'Process {col[0]}', list_names_g, list_values_g, path)
+            if save:
+                plot_G_values(f'Process {col[0]}', list_names_g, list_values_g, path)
+
             important_g[(col[0], 'UID')] = list_names_g
             important_g[col] = list_values_g
 
     return important_g
-
-
-#             list_values_g contain lists, each one for proccess. for each of them, we need to divide for two,
-# calculate the distance between each 2 points, and find the egdes
 
 
 def pairs_df_to_dict(df, cell_name, control_list, inhibitor_list, fixed_col='time'):
@@ -293,40 +334,3 @@ def create_new_sheet(df, path, sheet_name):
         print(f"The sheet '{sheet_name}' created successfully")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
-
-
-def find_edges(list_names_g, list_values_g):
-    """
-       The function finds the start and end edges of a graph represented as a DataFrame.
-
-       Parameters:
-           list_values_g(List[float]): The list of the values
-           list_names_g(List[str]): The list of the names of the proteins
-
-       Returns:
-           Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
-"""
-
-    # split the list into 2 lists
-    half_ind = len(list_values_g) // 2
-    first_half = list_values_g[:half_ind]
-    second_half = list_values_g[half_ind:]
-    distance, max = 0, 0
-    first_indices, second_indices = [], []
-    # find the max destination between 2 points and save their index and the value in first_indices
-    for i in range(1, len(first_half)):
-        distance = abs(abs(first_half[i]) - abs(first_half[i - 1]))
-        if distance > max:
-            max = distance
-            first_indices = [i - 1, i, max]
-    max = 0
-    # find the max destination between 2 points and save their index and the value in second_indices
-    for i in range(1, len(second_half)):
-        distance = abs(abs(second_half[i]) - abs(second_half[i - 1]))
-        if distance > max:
-            max = distance
-            second_indices = [i - 1, i, max]
-
-    start_edge = list_names_g[: first_indices[1]]
-    end_edge = list_names_g[half_ind + second_indices[1]:]
-    return start_edge, end_edge
