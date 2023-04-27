@@ -166,7 +166,7 @@ def sort_G_values(g_df, cols, path='', save=False):
     return important_g
 
 
-def pairs_df_to_dict(df, cell_name, control_list, inhibitor_list, fixed_col='time'):
+def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixed_col='time'):
     """
     Convert a Pandas dataframe to a dictionary of pairs of dataframes.
 
@@ -185,6 +185,13 @@ def pairs_df_to_dict(df, cell_name, control_list, inhibitor_list, fixed_col='tim
               (1) Keys for pairs of control_list and inhibitor_list with same fixed_col.
               (2) Keys for pairs of inhibitor_list with itself with different fixed_col.
     """
+    if control_list is None:
+        control_list = ['CONTROL', 'DMSO', 'PBS']
+
+    if inhibitor_list is None:
+        compound_name = df['compound_name'].unique()
+        inhibitor_list = list(set(compound_name) - set(control_list))
+
     # Filter the input dataframe to only include rows with the specified cell name
     df = df.loc[df['cell_line_name'] == cell_name]
 
@@ -213,13 +220,16 @@ def pairs_df_to_dict(df, cell_name, control_list, inhibitor_list, fixed_col='tim
         for t1, t2 in itertools.combinations(unique_fixed_col_i, 2):
             df_i_t1 = df.loc[(df['compound_name'] == i) & (df[fixed_col] == t1)]
             df_i_t2 = df.loc[(df['compound_name'] == i) & (df[fixed_col] == t2)]
-            if not (df_i_t1.empty or df_i_t2.empty):
+            if not (df_i_t1.empty and df_i_t2.empty):
                 pairs_dict[(cell_name, i, i, t1, t2)] = pd.concat([df_i_t1, df_i_t2])
 
+    # pd.set_option("display.max_rows", None)  # Display all rows
+    # pd.set_option("display.max_columns", None)  # Display all columns
+    # print(pairs_dict)
     return pairs_dict
 
 
-def analyze_pairs(pairs_dict, p_value=0.05):
+def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
@@ -228,6 +238,7 @@ def analyze_pairs(pairs_dict, p_value=0.05):
                            The keys of the dictionary are tuples of two compound names.
         p_value (float): The p-value threshold for determining whether the difference
                          between means is significant. Default is 0.05.
+        fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
 
     Returns:
         dict: A dictionary with the same keys as the input dictionary, but with updated dataframes.
@@ -242,13 +253,20 @@ def analyze_pairs(pairs_dict, p_value=0.05):
 
         dfs_to_concat = []
         for col in analysis_cols:
-            df_first = df.loc[df['compound_name'] == key[1], col]
-            df_second = df.loc[df['compound_name'] == key[2], col]
+            if key[1] == key[2]:
+                df_first = df.loc[df[fixed_col] == key[3], col]
+                df_second = df.loc[df[fixed_col] == key[4], col]
+            else:
+                df_first = df.loc[df['compound_name'] == key[1], col]
+                df_second = df.loc[df['compound_name'] == key[2], col]
 
             first_avg = df_first.mean()
             second_avg = df_second.mean()
 
-            if abs(first_avg - second_avg) > p_value:
+            if first_avg * second_avg < 0:
+                dfs_to_concat.append(df[[col]])
+
+            elif abs(first_avg - second_avg) > p_value:
                 dfs_to_concat.append(df[[col]])
 
         if len(dfs_to_concat) == 0:
@@ -279,17 +297,11 @@ def create_pairs_df(pairs_dict):
     """
     comp_list = []
     for i, df in enumerate(pairs_dict.values()):
-        cols = df.columns.tolist()
-        df = df.reindex(columns=cols)
-        df.loc[-1] = cols
-        df.index = df.index + 1
-        df = df.sort_index()
         comp_list.append(df)
         if i < len(pairs_dict) - 1:
             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=df.columns))
 
     pairs_df = pd.concat(comp_list, sort=False)
-    pairs_df = pairs_df.reset_index(drop=True)
 
     return pairs_df
 
