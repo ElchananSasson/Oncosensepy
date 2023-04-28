@@ -276,9 +276,46 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
 
     return pairs_dict
 
-    # pd.set_option("display.max_rows", None)  # Display all rows
-    # pd.set_option("display.max_columns", None)  # Display all columns
-    # print(pairs_dict)
+
+def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
+    """
+    This function analyzes a single Pandas dataframe for a specified cell line and performs a t-test between the means of the
+    control and treatment groups for each timepoint column. If the difference between means is not significant (as determined
+    by the p-value threshold), the column is dropped from the dataframe. The default control compounds are 'CONTROL', 'DMSO', and 'PBS'.
+
+    Arguments:
+    df (Pandas dataframe): The input dataframe to be analyzed.
+    cell_name (str): The name of the cell line to be analyzed.
+    control_list (list of str): A list of control compound names. Default is ['CONTROL', 'DMSO', 'PBS'].
+    p_value (float): The p-value threshold for determining whether the difference between means is significant.
+    Default is 0.05.
+
+    Returns:
+    Pandas dataframe: A copy of the input dataframe with any columns where the difference between means was not
+    significant (as determined by the p-value threshold) dropped.
+    """
+    if control_list is None:
+        control_list = ['CONTROL', 'DMSO', 'PBS']
+
+    # Filter the input dataframe to only include rows with the specified cell name
+    new_df = df.loc[df['cell_line_name'] == cell_name]
+
+    col_names = new_df.columns.tolist()
+    time_col_idx = col_names.index('time')
+    analysis_cols = [c for c in col_names[time_col_idx + 1:]]
+
+    for col in analysis_cols:
+        df_first = new_df.loc[new_df['compound_name'].isin(control_list), col]
+        df_second = new_df.loc[~new_df['compound_name'].isin(control_list), col]
+
+        first_avg = df_first.mean()
+        second_avg = df_second.mean()
+
+        t, p = ttest_ind(df_first, df_second)
+        if (np.sign(first_avg) == np.sign(second_avg)) and (p > p_value):
+            new_df = new_df.drop(col, axis=1)
+
+    return new_df
 
 
 def create_pairs_df(pairs_dict):
@@ -342,3 +379,6 @@ def create_new_sheet(df, path, sheet_name):
         print(f"The sheet '{sheet_name}' created successfully")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
+
+# pd.set_option("display.max_rows", None)  # Display all rows
+# pd.set_option("display.max_columns", None)  # Display all columns
