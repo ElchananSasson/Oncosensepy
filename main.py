@@ -25,7 +25,7 @@ if __name__ == '__main__':
     pairs_dict = ds.pairs_df_to_dict(important_l, 'MCF7', fixed_col='time')  # data66
     # pairs_dict = ds.pairs_df_to_dict(important_l, 'MCAS', fixed_col='time')  # data69
 
-    ds.analyze_pairs(pairs_dict, 0.05)
-    pairs_df = ds.create_pairs_df(pairs_dict)
+    analyzed_pairs_dict = ds.analyze_pairs(pairs_dict, 0.05)
+    pairs_df = ds.create_pairs_df(analyzed_pairs_dict)
     ds.create_new_sheet(pairs_df, data_set_path, 'MCF7')
 
