@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import itertools
 import validation as valid
+from scipy.stats import ttest_ind
 
 
 def important_L(df, err_limit, threshold):
@@ -200,11 +201,6 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
     # Filter the dataframe to only include rows with compound names in the full list
     df = df.loc[df['compound_name'].isin(full_list)]
 
-    # If the filtered dataframe is empty, print an error message and exit the program
-    if df.empty:
-        print(f'There is a problem here: {control_list} or here: {inhibitor_list}')
-        sys.exit()
-
     pairs_dict = {}
     # Pairs of control_list and inhibitor_list with same fixed_col
     for i, j in itertools.product(control_list, inhibitor_list):
@@ -263,10 +259,8 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
             first_avg = df_first.mean()
             second_avg = df_second.mean()
 
-            if first_avg * second_avg < 0:
-                dfs_to_concat.append(df[[col]])
-
-            elif abs(first_avg - second_avg) > p_value:
+            t, p = ttest_ind(df_first, df_second)
+            if (first_avg * second_avg < 0) or (p <= p_value):
                 dfs_to_concat.append(df[[col]])
 
         if len(dfs_to_concat) == 0:
@@ -279,6 +273,8 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
 
     for key in keys_to_remove:
         pairs_dict.pop(key)
+
+    return pairs_dict
 
     # pd.set_option("display.max_rows", None)  # Display all rows
     # pd.set_option("display.max_columns", None)  # Display all columns
