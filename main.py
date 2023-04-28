@@ -29,3 +29,6 @@ if __name__ == '__main__':
     pairs_df = ds.create_pairs_df(analyzed_pairs_dict)
     ds.create_new_sheet(pairs_df, data_set_path, 'MCF7')
 
+    control_treatment_df = ds.analyze_control_treatment(important_l, 'MCF7')
+    ds.create_new_sheet(control_treatment_df, data_set_path, 'MCF7_control_vs_treatment')
+
