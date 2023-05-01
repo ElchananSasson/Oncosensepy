@@ -1,4 +1,3 @@
-import sys
 import os
 import numpy as np
 import pandas as pd
@@ -6,6 +5,7 @@ import matplotlib.pyplot as plt
 import itertools
 import validation as valid
 from scipy.stats import ttest_ind
+import exceptions as e
 
 
 def important_L(df, err_limit, threshold):
@@ -23,6 +23,8 @@ def important_L(df, err_limit, threshold):
             pandas.DataFrame: The DataFrame with only the important columns selected.
     """
     valid.is_valid_L(df)
+    if threshold < 0:
+        raise e.NegativeNumberException("Threshold should be positive number")
     new_df = df.loc[:, :5].copy()
     new_df['time'] = new_df['time'].apply(lambda x: '0hr' if x == 0 else x)
     for i in range(1, len(df.columns) - 5):
@@ -65,7 +67,8 @@ def find_edges(list_names_g, list_values_g):
        Returns:
            Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
     """
-
+    if len(list_values_g) == 0:
+        return [], []
     # split the list into 2 lists
     half_ind = len(list_values_g) // 2
     first_half = list_values_g[:half_ind]
@@ -88,9 +91,9 @@ def find_edges(list_names_g, list_values_g):
             max_distance = distance
             second_indices = [i - 1, i, max_distance]
 
-    start_edge = list_names_g[: first_indices[1]]
-    end_edge = list_names_g[half_ind + second_indices[1]:]
-    return start_edge, end_edge
+    lower_edge = list_names_g[: first_indices[1]]
+    upper_edge = list_names_g[half_ind + second_indices[1]:]
+    return lower_edge, upper_edge
 
 
 def sort_G_values(g_df, cols, path='', save=False):
@@ -132,11 +135,12 @@ def sort_G_values(g_df, cols, path='', save=False):
         for i, txt in enumerate(range(len(uid))):
             plt.text(uid[i], values[i] + 0.002, str(i), fontsize=5)
 
-        start_edge, end_edge = find_edges(uid, values)
-        start_edge_indices = [uid.index(val) for val in start_edge]
-        end_edge_indices = [uid.index(val) for val in end_edge]
-        plt.scatter([uid[i] for i in start_edge_indices], [values[i] for i in start_edge_indices], color='red')
-        plt.scatter([uid[i] for i in end_edge_indices], [values[i] for i in end_edge_indices], color='red')
+        lower_edge, upper_edge = find_edges(uid, values)
+        if lower_edge != [] and upper_edge != []:
+            lower_edge_indices = [uid.index(val) for val in lower_edge]
+            upper_edge_indices = [uid.index(val) for val in upper_edge]
+            plt.scatter([uid[i] for i in lower_edge_indices], [values[i] for i in lower_edge_indices], color='red')
+            plt.scatter([uid[i] for i in upper_edge_indices], [values[i] for i in upper_edge_indices], color='red')
 
         plt.savefig(save_path + '/' + f'{title}.SVG', dpi=300)
         plt.close()
@@ -219,9 +223,9 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
             if not (df_i_t1.empty and df_i_t2.empty):
                 pairs_dict[(cell_name, i, i, t1, t2)] = pd.concat([df_i_t1, df_i_t2])
 
-    # pd.set_option("display.max_rows", None)  # Display all rows
-    # pd.set_option("display.max_columns", None)  # Display all columns
-    # print(pairs_dict)
+    pd.set_option("display.max_rows", None)  # Display all rows
+    pd.set_option("display.max_columns", None)  # Display all columns
+    print(pairs_dict)
     return pairs_dict
 
 
@@ -279,9 +283,10 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
 
 def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
     """
-    This function analyzes a single Pandas dataframe for a specified cell line and performs a t-test between the means of the
-    control and treatment groups for each timepoint column. If the difference between means is not significant (as determined
-    by the p-value threshold), the column is dropped from the dataframe. The default control compounds are 'CONTROL', 'DMSO', and 'PBS'.
+    This function analyzes a single Pandas dataframe for a specified cell line and performs a t-test between the
+    means of the control and treatment groups for each time-point column. If the difference between means is not
+    significant (as determined by the p-value threshold), the column is dropped from the dataframe. The default
+    control compounds are 'CONTROL', 'DMSO', and 'PBS'.
 
     Arguments:
     df (Pandas dataframe): The input dataframe to be analyzed.
@@ -379,6 +384,3 @@ def create_new_sheet(df, path, sheet_name):
         print(f"The sheet '{sheet_name}' created successfully")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
-
-# pd.set_option("display.max_rows", None)  # Display all rows
-# pd.set_option("display.max_columns", None)  # Display all columns

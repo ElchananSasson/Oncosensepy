@@ -16,3 +16,8 @@ class InvalidDirectoryPathException(Exception):
 class InvalidColumnsException(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+
+class NegativeNumberException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
