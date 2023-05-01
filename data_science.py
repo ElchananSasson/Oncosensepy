@@ -1,11 +1,17 @@
 import os
+import sys
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import itertools
+
+from PyQt5.QtWidgets import QApplication
+
 import validation as valid
 from scipy.stats import ttest_ind
 import exceptions as e
+from groupSeperator import AssignValuesWindow
 
 
 def important_L(df, err_limit, threshold):
@@ -190,6 +196,7 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
               (1) Keys for pairs of control_list and inhibitor_list with same fixed_col.
               (2) Keys for pairs of inhibitor_list with itself with different fixed_col.
     """
+
     if control_list is None:
         control_list = ['CONTROL', 'DMSO', 'PBS']
 
