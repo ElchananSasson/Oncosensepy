@@ -14,13 +14,36 @@ import exceptions as e
 from groupSeperator import AssignValuesWindow
 
 
+def get_LG_data(data_set_path):
+    """
+    The function reads Excel sheets ('L' and 'G') from the specified file path and returns clear DataFrames without
+    missing values.
+
+    Param:
+        data_set_path (str): The path to the Excel file containing the data.
+
+    Returns:
+        l_df (pandas.DataFrame): A DataFrame containing the data from the 'L' sheet.
+        g_df (pandas.DataFrame): A DataFrame containing the data from the 'G' sheet.
+    """
+    l_df = pd.read_excel(data_set_path, sheet_name='L').fillna(0)
+    g_df = pd.read_excel(data_set_path, sheet_name='G').fillna(0)
+    l_df['compound_name'].apply(lambda x: 'CONTROL' if x == 0 else x)
+    l_df['time'].apply(lambda x: '0hr' if x == 0 else x)
+    if l_df['cell_line_name'].isin([0]):
+        e.InvalidCellLineException("Cell line name has missing values")
+    if g_df['UID'].isin([0]):
+        e.InvalidUIDException("UID has missing values")
+    return l_df, g_df
+
+
 def important_L(df, err_limit, threshold):
     """
         This method returns a DataFrame with only the important columns. An important column is determined
         by whether the number of cells whose value is higher in absolute value than the error limit,
         is greater than or equal to the threshold.
 
-        Arguments:
+        Params:
             df (pandas.DataFrame): The DataFrame to be checked.
             err_limit (float): The error limit.
             threshold (int): The number of significant values.
@@ -47,7 +70,7 @@ def filter_by_col(df, col, filter_list):
     """
         This function filters data by a certain column and by a list of values it receives.
 
-        Arguments:
+        Params:
             df (pandas.DataFrame): The DataFrame to filter.
             col (str): The column according to which the filtering will be performed.
             filter_list (List): A list of values that we would like to appear in the selected column.
@@ -66,7 +89,7 @@ def find_edges(list_names_g, list_values_g):
     """
        The function finds the start and end edges of a graph represented as a DataFrame.
 
-       Parameters:
+       Params:
            list_values_g(List[float]): The list of the values
            list_names_g(List[str]): The list of the names of the proteins
 
@@ -108,7 +131,7 @@ def sort_G_values(g_df, cols, path='', save=False):
         In addition, the function saves the plot of each process if the 'save' argument is set to True.
         Otherwise, the plots will be displayed one by one.
 
-        Arguments:
+        Params:
             g_df (pandas.DataFrame): The G_values DataFrame.
             cols (list): The process to sort its G_values.
             path (str): The path to save the figures. If not specified or set to an empty string (''),
@@ -124,7 +147,7 @@ def sort_G_values(g_df, cols, path='', save=False):
             This function accepts columns representing processes and sorts for each process its proteins.
             In addition, the function saves the plot of process
 
-            Arguments:
+            Params:
                 title (str): The plot title.
                 uid (list): The sorted list of G_UID.
                 values (list): The sorted list of G_values.
@@ -181,7 +204,7 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
     """
     Convert a Pandas dataframe to a dictionary of pairs of dataframes.
 
-    Arguments:
+    Params:
         df (pandas.DataFrame): The input dataframe to convert.
         cell_name (str): The name of the cell line to filter the dataframe by.
         control_list (list): A list of control compound names.
@@ -204,8 +227,6 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
         if inhibitor_list is None:
             compound_name = df['compound_name'].unique()
             inhibitor_list = list(set(compound_name) - set(control_list))
-        # TODO remove the line:
-        inhibitor_list.remove(0)
         app = QApplication(sys.argv)
         window = AssignValuesWindow(control_list, inhibitor_list)
         window.show()
@@ -248,7 +269,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
-    Arguments:
+    Params:
         pairs_dict (dict): A dictionary containing Pandas dataframes for each pair of compounds.
                            The keys of the dictionary are tuples of two compound names.
         p_value (float): The p-value threshold for determining whether the difference
@@ -303,7 +324,7 @@ def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
     significant (as determined by the p-value threshold), the column is dropped from the dataframe. The default
     control compounds are 'CONTROL', 'DMSO', and 'PBS'.
 
-    Arguments:
+    Params:
     df (Pandas dataframe): The input dataframe to be analyzed.
     cell_name (str): The name of the cell line to be analyzed.
     control_list (list of str): A list of control compound names. Default is ['CONTROL', 'DMSO', 'PBS'].
@@ -342,7 +363,7 @@ def create_pairs_df(pairs_dict):
     """
     This function takes a dictionary of paired DataFrames and concatenates them into a single DataFrame for comparison.
 
-    Arguments:
+    Param:
         pairs_dict (dict): A dictionary of paired DataFrames.
 
     Returns:
@@ -363,7 +384,7 @@ def create_csv(df, name='default_name', path=None):
     """
         This method inserts the DataFrame into a csv file.
 
-        Arguments:
+        Params:
             df (pandas.DataFrame): The DataFrame to insert into a new csv.
             name (str): File name.
             path (str): The file path.
@@ -388,7 +409,7 @@ def create_new_sheet(df, path, sheet_name):
     """
         This method inserts the DataFrame into a new sheet in an existing Excel file.
 
-        Arguments:
+        Params:
             df (pandas.DataFrame): The DataFrame to insert into a new sheet.
             path (str): The file path.
             sheet_name (str): The name of the new sheet.
