@@ -197,12 +197,20 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
               (2) Keys for pairs of inhibitor_list with itself with different fixed_col.
     """
 
-    if control_list is None:
-        control_list = ['CONTROL', 'DMSO', 'PBS']
+    if control_list is None or inhibitor_list is None:
+        if control_list is None:
+            control_list = ['CONTROL', 'DMSO', 'PBS']
 
-    if inhibitor_list is None:
-        compound_name = df['compound_name'].unique()
-        inhibitor_list = list(set(compound_name) - set(control_list))
+        if inhibitor_list is None:
+            compound_name = df['compound_name'].unique()
+            inhibitor_list = list(set(compound_name) - set(control_list))
+        # TODO remove the line:
+        inhibitor_list.remove(0)
+        app = QApplication(sys.argv)
+        window = AssignValuesWindow(control_list, inhibitor_list)
+        window.show()
+        app.exec_()
+        control_list, inhibitor_list = window.result
 
     # Filter the input dataframe to only include rows with the specified cell name
     df = df.loc[df['cell_line_name'] == cell_name]
