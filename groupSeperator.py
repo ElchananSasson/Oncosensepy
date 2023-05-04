@@ -1,5 +1,4 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QListWidget, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox
+from PyQt5.QtWidgets import QWidget, QListWidget, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QFont
 
 
@@ -7,7 +6,7 @@ class AssignValuesWindow(QWidget):
     def __init__(self, control_list, inhibitor_list):
         super().__init__()
 
-        self.resize(350, 400)
+        self.resize(500, 400)
 
         font = QFont('sans-serif', 10)
 
@@ -96,6 +95,7 @@ class AssignValuesWindow(QWidget):
             self.left_list.addItem(item.text())
         # Clear the selection in the right list
         self.right_list.clearSelection()
+
     def delete(self):
         # Remove the selected item(s) from both lists
         selected_left = self.left_list.selectedItems()
@@ -137,4 +137,3 @@ class AssignValuesWindow(QWidget):
             else:
                 # User cancelled exit, ignore the close event
                 event.ignore()
-
