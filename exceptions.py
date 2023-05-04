@@ -21,3 +21,13 @@ class InvalidColumnsException(Exception):
 class NegativeNumberException(Exception):
     def __init__(self, message):
         super().__init__(message)
+
+
+class InvalidCellLineException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class InvalidUIDException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
