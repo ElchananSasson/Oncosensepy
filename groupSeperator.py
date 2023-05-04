@@ -7,7 +7,7 @@ class AssignValuesWindow(QWidget):
     def __init__(self, control_list, inhibitor_list):
         super().__init__()
 
-        self.resize(200, 300)
+        self.resize(350, 400)
 
         font = QFont('sans-serif', 10)
 
@@ -86,13 +86,16 @@ class AssignValuesWindow(QWidget):
         for item in self.left_list.selectedItems():
             self.left_list.takeItem(self.left_list.row(item))
             self.right_list.addItem(item.text())
+        # Clear the selection in the left list
+        self.left_list.clearSelection()
 
     def move_left(self):
         # Move the selected item(s) from the right list to the left list
         for item in self.right_list.selectedItems():
             self.right_list.takeItem(self.right_list.row(item))
             self.left_list.addItem(item.text())
-
+        # Clear the selection in the right list
+        self.right_list.clearSelection()
     def delete(self):
         # Remove the selected item(s) from both lists
         selected_left = self.left_list.selectedItems()
@@ -135,15 +138,3 @@ class AssignValuesWindow(QWidget):
                 # User cancelled exit, ignore the close event
                 event.ignore()
 
-
-if __name__ == '__main__':
-    values = ['a', 'b', 'c']
-    left_default = ['a', 'c']
-    right_default = ['b']
-    app = QApplication(sys.argv)
-    window = AssignValuesWindow(left_default, right_default)
-    window.show()
-    app.exec_()
-    left_values, right_values = window.result
-    print(f"Left values: {left_values}")
-    print(f"Right values: {right_values}")
