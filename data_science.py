@@ -1,13 +1,10 @@
 import os
 import sys
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import itertools
-
 from PyQt5.QtWidgets import QApplication
-
 import validation as valid
 from scipy.stats import ttest_ind
 import exceptions as e
@@ -28,12 +25,15 @@ def get_LG_data(data_set_path):
     """
     l_df = pd.read_excel(data_set_path, sheet_name='L').fillna(0)
     g_df = pd.read_excel(data_set_path, sheet_name='G').fillna(0)
-    l_df['compound_name'].apply(lambda x: 'CONTROL' if x == 0 else x)
-    l_df['time'].apply(lambda x: '0hr' if x == 0 else x)
-    if l_df['cell_line_name'].isin([0]):
+
+    l_df['compound_name'] = l_df['compound_name'].apply(lambda x: 'CONTROL' if x == 0 else x)
+    l_df['time'] = l_df['time'].apply(lambda x: '0hr' if x == 0 else x)
+    if 0 in l_df['cell_line_name'].values:
         e.InvalidCellLineException("Cell line name has missing values")
-    if g_df['UID'].isin([0]):
+
+    if 0 in g_df['UID'].values:
         e.InvalidUIDException("UID has missing values")
+
     return l_df, g_df
 
 
@@ -55,7 +55,6 @@ def important_L(df, err_limit, threshold):
     if threshold < 0:
         raise e.NegativeNumberException("Threshold should be positive number")
     new_df = df.loc[:, :5].copy()
-    new_df['time'] = new_df['time'].apply(lambda x: '0hr' if x == 0 else x)
     for i in range(1, len(df.columns) - 5):
         count = 0
         for cell in df[i]:
@@ -259,13 +258,10 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
             if not (df_i_t1.empty and df_i_t2.empty):
                 pairs_dict[(cell_name, i, i, t1, t2)] = pd.concat([df_i_t1, df_i_t2])
 
-    pd.set_option("display.max_rows", None)  # Display all rows
-    pd.set_option("display.max_columns", None)  # Display all columns
-    print(pairs_dict)
     return pairs_dict
 
 
-def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
+def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
@@ -275,6 +271,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
         p_value (float): The p-value threshold for determining whether the difference
                          between means is significant. Default is 0.05.
         fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
+        display (bool): If True, the function print the dictionary
 
     Returns:
         dict: A dictionary with the same keys as the input dictionary, but with updated dataframes.
@@ -313,6 +310,11 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time'):
 
     for key in keys_to_remove:
         pairs_dict.pop(key)
+
+    if display:
+        pd.set_option("display.max_rows", None)  # Display all rows
+        pd.set_option("display.max_columns", None)  # Display all columns
+        print(pairs_dict)
 
     return pairs_dict
 
