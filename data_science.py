@@ -218,13 +218,15 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
               (1) Keys for pairs of control_list and inhibitor_list with same fixed_col.
               (2) Keys for pairs of inhibitor_list with itself with different fixed_col.
     """
+    # Filter the input dataframe to only include rows with the specified cell name
+    pairs_df = df.loc[df['cell_line_name'] == cell_name]
 
     if control_list is None or inhibitor_list is None:
         if control_list is None:
             control_list = ['CONTROL', 'DMSO', 'PBS']
 
         if inhibitor_list is None:
-            compound_name = df['compound_name'].unique()
+            compound_name = pairs_df['compound_name'].unique()
             inhibitor_list = list(set(compound_name) - set(control_list))
         app = QApplication(sys.argv)
         window = AssignValuesWindow(control_list, inhibitor_list)
@@ -232,29 +234,26 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
         app.exec_()
         control_list, inhibitor_list = window.result
 
-    # Filter the input dataframe to only include rows with the specified cell name
-    df = df.loc[df['cell_line_name'] == cell_name]
-
     full_list = control_list + inhibitor_list
 
     # Filter the dataframe to only include rows with compound names in the full list
-    df = df.loc[df['compound_name'].isin(full_list)]
+    pairs_df = pairs_df.loc[pairs_df['compound_name'].isin(full_list)]
 
     pairs_dict = {}
     # Pairs of control_list and inhibitor_list with same fixed_col
     for i, j in itertools.product(control_list, inhibitor_list):
-        for col in df[fixed_col].unique():
-            df_i_j_t = df.loc[(df['compound_name'] == i) & (df[fixed_col] == col)]
-            df_j_i_t = df.loc[(df['compound_name'] == j) & (df[fixed_col] == col)]
+        for col in pairs_df[fixed_col].unique():
+            df_i_j_t = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == col)]
+            df_j_i_t = pairs_df.loc[(pairs_df['compound_name'] == j) & (pairs_df[fixed_col] == col)]
             if not (df_i_j_t.empty or df_j_i_t.empty):
                 pairs_dict[(cell_name, i, j, col)] = pd.concat([df_i_j_t, df_j_i_t])
 
     # Pairs of inhibitor_list with itself with different fixed_col
     for i in inhibitor_list:
-        unique_fixed_col_i = df.loc[df['compound_name'] == i, fixed_col].unique()
+        unique_fixed_col_i = pairs_df.loc[pairs_df['compound_name'] == i, fixed_col].unique()
         for t1, t2 in itertools.combinations(unique_fixed_col_i, 2):
-            df_i_t1 = df.loc[(df['compound_name'] == i) & (df[fixed_col] == t1)]
-            df_i_t2 = df.loc[(df['compound_name'] == i) & (df[fixed_col] == t2)]
+            df_i_t1 = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == t1)]
+            df_i_t2 = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == t2)]
             if not (df_i_t1.empty and df_i_t2.empty):
                 pairs_dict[(cell_name, i, i, t1, t2)] = pd.concat([df_i_t1, df_i_t2])
 
