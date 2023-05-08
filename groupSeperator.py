@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QListWidget, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QFont
 
@@ -25,6 +26,11 @@ class AssignValuesWindow(QWidget):
         # Set the font of each list
         self.left_list.setFont(font)
         self.right_list.setFont(font)
+
+        # Connect the itemSelectionChanged signal of each list to a method that ensures only one item is selected at
+        # a time
+        self.left_list.itemClicked.connect(self.on_list_item_clicked)
+        self.right_list.itemClicked.connect(self.on_list_item_clicked)
 
         # Create buttons to move items between the lists
         self.move_right_button = QPushButton(">")
@@ -74,25 +80,69 @@ class AssignValuesWindow(QWidget):
                         cursor:pointer;
                     }
                 """
+        delete_style = """
+                    QPushButton {
+                        border: 1px solid black;
+                        color: black;
+                        border-radius: 5px;
+                        padding: 5px;
+                        font-family: sans-serif
+
+                    }
+                    QPushButton:hover {
+                        background-color: #e41b1b;
+                        cursor:pointer;
+                    }
+                """
+
         self.move_right_button.setStyleSheet(button_style)
         self.move_left_button.setStyleSheet(button_style)
-        self.delete_button.setStyleSheet(button_style)
+        self.delete_button.setStyleSheet(delete_style)
         self.reset_button.setStyleSheet(button_style)
         self.apply_button.setStyleSheet(button_style)
 
+    def on_list_item_clicked(self, item):
+        sender_list = self.sender()  # Get the list that sent the signal
+        other_list = self.left_list if sender_list is self.right_list else self.right_list
+
+        # Clear the selection in the other list
+        other_list.clearSelection()
+
+        # Select the clicked item in the sender list
+        sender_list.setCurrentItem(item)
+
+
     def move_right(self):
         # Move the selected item(s) from the left list to the right list
-        for item in self.left_list.selectedItems():
-            self.left_list.takeItem(self.left_list.row(item))
+        selected_items = self.left_list.selectedItems()
+        if not selected_items:
+            return
+        for item in selected_items:
+            # If the item is already in the right list, don't move it
+            if self.right_list.findItems(item.text(), Qt.MatchExactly):
+                continue
+            # Add the item to the right list and deselect any other selected items in that list
             self.right_list.addItem(item.text())
+            self.right_list.clearSelection()
+            # Remove the item from the left list
+            self.left_list.takeItem(self.left_list.row(item))
         # Clear the selection in the left list
         self.left_list.clearSelection()
 
     def move_left(self):
         # Move the selected item(s) from the right list to the left list
-        for item in self.right_list.selectedItems():
-            self.right_list.takeItem(self.right_list.row(item))
+        selected_items = self.right_list.selectedItems()
+        if not selected_items:
+            return
+        for item in selected_items:
+            # If the item is already in the left list, don't move it
+            if self.left_list.findItems(item.text(), Qt.MatchExactly):
+                continue
+            # Add the item to the left list and deselect any other selected items in that list
             self.left_list.addItem(item.text())
+            self.left_list.clearSelection()
+            # Remove the item from the right list
+            self.right_list.takeItem(self.right_list.row(item))
         # Clear the selection in the right list
         self.right_list.clearSelection()
 
