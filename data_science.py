@@ -292,12 +292,11 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
                 df_first = df.loc[df['compound_name'] == key[1], col]
                 df_second = df.loc[df['compound_name'] == key[2], col]
 
-            first_avg = df_first.mean()
-            second_avg = df_second.mean()
-
+            total_avg = df_first.mean() * df_second.mean()
+            col_len = df_first.shape[0] + df_second.shape[0] + 2
             t, p = ttest_ind(df_first, df_second)
-            if (first_avg * second_avg < 0) or (p <= p_value):
-                dfs_to_concat.append(df[[col]])
+            if (total_avg < 0) or (p <= p_value):
+                dfs_to_concat.append(add_reason_row(df, col, total_avg, p, p_value, col_len))
 
         if len(dfs_to_concat) == 0:
             keys_to_remove.append(key)
@@ -316,6 +315,33 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
         print(pairs_dict)
 
     return pairs_dict
+
+
+def add_reason_row(df, col, total_avg, p, p_value, col_len):
+    """
+        Adds a reason row to a Pandas DataFrame indicating the result of the analysis.
+
+        Params:
+            df (DataFrame): The input DataFrame.
+            col (str): The name of the column in the DataFrame to add the reason row.
+            total_avg (float): The average value calculated for the column across groups.
+            p (float): The p-value calculated for the statistical test.
+            p_value (float): The p-value threshold for determining significance.
+            col_len (int): The length of the column.
+
+        Returns:
+            pandas.DataFrame: The input DataFrame with the reason row added.
+        """
+    if (total_avg < 0) and (p <= p_value):
+        df.loc[col_len, col] = "P-Value and Sign change"
+
+    elif total_avg < 0:
+        df.loc[col_len, col] = "Sign change"
+
+    elif p <= p_value:
+        df.loc[col_len, col] = "P-Value"
+    df = df.rename(index={col_len: 'Reason'})
+    return df[[col]]
 
 
 def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
@@ -377,7 +403,6 @@ def create_pairs_df(pairs_dict):
             comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=df.columns))
 
     pairs_df = pd.concat(comp_list, sort=False)
-
     return pairs_df
 
 
