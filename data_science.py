@@ -260,7 +260,7 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
     return pairs_dict
 
 
-def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
+def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, only_avg=False):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
@@ -277,7 +277,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
               If a key-value pair is removed from the dictionary because none of the columns pass the test,
               it will not appear in the output dictionary.
     """
-    keys_to_remove = []
+    keys_to_remove, averages = [], []
     for key, df in pairs_dict.items():
         col_names = df.columns.tolist()
         time_col_idx = col_names.index('time')
@@ -296,14 +296,30 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False):
             col_len = df_first.shape[0] + df_second.shape[0] + 2
             t, p = ttest_ind(df_first, df_second)
             if (total_avg < 0) or (p <= p_value):
+                averages.append((df_first.mean(), df_second.mean()))
                 dfs_to_concat.append(add_reason_row(df, col, total_avg, p, p_value, col_len))
 
         if len(dfs_to_concat) == 0:
             keys_to_remove.append(key)
         else:
+            if only_avg:
+                i = 0
+                for df_col in dfs_to_concat:
+                    df_col.iloc[0] = averages[i][0]
+                    df_col.iloc[1] = averages[i][1]
+                    i += 1
+                    # not working
+                    df_col.iloc[2:-1] = np.nan
+                    df_col.dropna(axis=0, how='all', inplace=True)
+
+
             new_df = pd.concat(dfs_to_concat, axis=1)
             new_df = new_df.reindex(sorted(new_df.columns), axis=1)
-            pairs_dict[key] = pd.concat(
+            if only_avg:
+                df_without_barcode = df[['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']]
+                pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
+            else:
+                pairs_dict[key] = pd.concat(
                 [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
 
     for key in keys_to_remove:

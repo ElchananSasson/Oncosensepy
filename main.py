@@ -17,14 +17,14 @@ if __name__ == '__main__':
     # filter_time = ds.filter_by_col(filter_dosage, 'time', ['0hr', '24hr'])
     # ds.create_new_sheet(filter_time, data_set_path, 'filter_by_dosage_time')
 
-    # important_g = ds.sort_G_values(g_df, important_l.columns[6:], r'G_plot', save=True)
+    # important_g = ds.sort_G_values(g_df, important_l.columns[6:], '', save=False)
     # ds.create_new_sheet(important_g, data_set_path, 'Sorted_G')
 
     # pairs_dict = ds.pairs_df_to_dict(important_l, 'MDAMB468', fixed_col='time')  # data27
     pairs_dict = ds.pairs_df_to_dict(important_l, 'MCF7', fixed_col='time')  # data66
     # pairs_dict = ds.pairs_df_to_dict(important_l, 'MCAS', fixed_col='time')  # data69
 
-    analyzed_pairs_dict = ds.analyze_pairs(pairs_dict, 0.05, display=True)
+    analyzed_pairs_dict = ds.analyze_pairs(pairs_dict, 0.05, display=True, only_avg=True)
     # pairs_df = ds.create_pairs_df(analyzed_pairs_dict)
     # ds.create_new_sheet(pairs_df, data_set_path, 'MCF7')
     #
