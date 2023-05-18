@@ -293,20 +293,28 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
                 df_first = df.loc[df['compound_name'] == key[1], col]
                 df_second = df.loc[df['compound_name'] == key[2], col]
 
-            total_avg = df_first.mean() * df_second.mean()
-            col_len = df_first.shape[0] + df_second.shape[0] + 2
+            sign_changed = False
+            if np.sign(df_first.mean()) != np.sign(df_second.mean()):
+                sign_changed = True
+
             t, p = ttest_ind(df_first, df_second)
-            if (total_avg < 0) or (p <= p_value):
+            if sign_changed or (p <= p_value):
                 averages[col] = (df_first.mean(), df_second.mean())
-                dfs_to_concat.append(add_reason_row(df, col, total_avg, p, p_value, col_len))
+
+                # add reason row
+                add_res = pd.DataFrame([[add_reason(sign_changed, p, p_value)]], columns=[col])
+                add_res = add_res.rename(index={0: 'Reason'})
+
+                # append the new row to df[[col]]
+                df_with_res_row = pd.concat([df[[col]], add_res])
+                dfs_to_concat.append(df_with_res_row)
 
         if len(dfs_to_concat) == 0:
             keys_to_remove.append(key)
         else:
             if only_avg:
-                #continue from here
+                # continue from here
                 pass
-
 
             new_df = pd.concat(dfs_to_concat, axis=1)
             new_df = new_df.reindex(sorted(new_df.columns), axis=1)
@@ -315,7 +323,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
                 pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
             else:
                 pairs_dict[key] = pd.concat(
-                [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
+                    [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
 
     for key in keys_to_remove:
         pairs_dict.pop(key)
@@ -328,7 +336,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
     return pairs_dict
 
 
-def add_reason_row(df, col, total_avg, p, p_value, col_len):
+def add_reason(sign_changed, p, p_value):
     """
         Adds a reason row to a Pandas DataFrame indicating the result of the analysis.
 
@@ -343,16 +351,14 @@ def add_reason_row(df, col, total_avg, p, p_value, col_len):
         Returns:
             pandas.DataFrame: The input DataFrame with the reason row added.
         """
-    if (total_avg < 0) and (p <= p_value):
-        df.loc[col_len, col] = "P-Value and Sign change"
+    if sign_changed and (p <= p_value):
+        return "P-Value and Sign change"
 
-    elif total_avg < 0:
-        df.loc[col_len, col] = "Sign change"
+    elif sign_changed:
+        return "Sign change"
 
     elif p <= p_value:
-        df.loc[col_len, col] = "P-Value"
-    df = df.rename(index={col_len: 'Reason'})
-    return df[[col]]
+        return "P-Value"
 
 
 def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):

@@ -24,7 +24,7 @@ if __name__ == '__main__':
     pairs_dict = osp.pairs_df_to_dict(important_l, 'MCF7', fixed_col='time')  # data66
     # pairs_dict = osp.pairs_df_to_dict(important_l, 'MCAS', fixed_col='time')  # data69
 
-    analyzed_pairs_dict = osp.analyze_pairs(pairs_dict, 0.05, display=True, only_avg=True)
+    analyzed_pairs_dict = osp.analyze_pairs(pairs_dict, 0.05, display=False, only_avg=True)
     pairs_df = osp.create_pairs_df(analyzed_pairs_dict)
     osp.create_new_sheet(pairs_df, data_set_path, 'MCF7')
     #
