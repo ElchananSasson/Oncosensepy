@@ -271,13 +271,14 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
                          between means is significant. Default is 0.05.
         fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
         display (bool): If True, the function print the dictionary
+        only_avg (bool): If True, return only the averages for each col
 
     Returns:
         dict: A dictionary with the same keys as the input dictionary, but with updated dataframes.
               If a key-value pair is removed from the dictionary because none of the columns pass the test,
               it will not appear in the output dictionary.
     """
-    keys_to_remove, averages = [], []
+    keys_to_remove, averages = [], {}
     for key, df in pairs_dict.items():
         col_names = df.columns.tolist()
         time_col_idx = col_names.index('time')
@@ -296,21 +297,15 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
             col_len = df_first.shape[0] + df_second.shape[0] + 2
             t, p = ttest_ind(df_first, df_second)
             if (total_avg < 0) or (p <= p_value):
-                averages.append((df_first.mean(), df_second.mean()))
+                averages[col] = (df_first.mean(), df_second.mean())
                 dfs_to_concat.append(add_reason_row(df, col, total_avg, p, p_value, col_len))
 
         if len(dfs_to_concat) == 0:
             keys_to_remove.append(key)
         else:
             if only_avg:
-                i = 0
-                for df_col in dfs_to_concat:
-                    df_col.iloc[0] = averages[i][0]
-                    df_col.iloc[1] = averages[i][1]
-                    i += 1
-                    # not working
-                    df_col.iloc[2:-1] = np.nan
-                    df_col.dropna(axis=0, how='all', inplace=True)
+                #continue from here
+                pass
 
 
             new_df = pd.concat(dfs_to_concat, axis=1)
