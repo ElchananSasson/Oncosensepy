@@ -278,7 +278,7 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
               If a key-value pair is removed from the dictionary because none of the columns pass the test,
               it will not appear in the output dictionary.
     """
-    keys_to_remove, averages = [], {}
+    keys_to_remove, compound_names, averages = [], [], {}
     for key, df in pairs_dict.items():
         col_names = df.columns.tolist()
         time_col_idx = col_names.index('time')
@@ -313,13 +313,28 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
             keys_to_remove.append(key)
         else:
             if only_avg:
-                # continue from here
-                pass
+                updated_dfs = []
+                for df_col in dfs_to_concat:
+                    last_row = df_col.iloc[-1].values[0]
+                    compound_names = df['compound_name'].dropna().unique().tolist()
+                    if len(compound_names) == 1:
+                        compound_names.append(compound_names[0])
+                    new_col = pd.DataFrame([averages[df_col.columns[0]][0], averages[df_col.columns[0]][1], last_row],
+                                           columns=[df_col.columns[0]], index=[compound_names[0] + " AVG",
+                                                                               compound_names[1] + " AVG", "Reason"])
 
+                    updated_dfs.append(new_col)
+                dfs_to_concat = updated_dfs
             new_df = pd.concat(dfs_to_concat, axis=1)
             new_df = new_df.reindex(sorted(new_df.columns), axis=1)
             if only_avg:
-                df_without_barcode = df[['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']]
+                columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
+                df_without_barcode = df.loc[df.index[:3], columns_to_select]
+                compound_names.append('')
+
+                df_without_barcode['compound_name'] = compound_names
+                df_without_barcode.index = [compound_names[0] + " AVG", compound_names[1] + " AVG", "Reason"]
+                df_without_barcode.loc["Reason"] = np.nan
                 pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
             else:
                 pairs_dict[key] = pd.concat(
