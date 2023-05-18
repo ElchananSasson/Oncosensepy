@@ -278,7 +278,8 @@ def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, onl
               If a key-value pair is removed from the dictionary because none of the columns pass the test,
               it will not appear in the output dictionary.
     """
-    keys_to_remove, compound_names, averages = [], [], {}
+    keys_to_remove, compound_names = [], []
+    averages = {}
     for key, df in pairs_dict.items():
         col_names = df.columns.tolist()
         time_col_idx = col_names.index('time')
