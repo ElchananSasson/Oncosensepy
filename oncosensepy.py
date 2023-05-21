@@ -1,5 +1,6 @@
 import os
 import sys
+import openpyxl
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -474,8 +475,25 @@ def create_new_sheet(df, path, sheet_name):
             sheet_name (str): The name of the new sheet.
     """
     if not df.empty:
-        with pd.ExcelWriter(path, mode='a') as writer:
-            df.to_excel(writer, sheet_name=sheet_name)
-        print(f"The sheet '{sheet_name}' created successfully")
+        try:
+            wb = openpyxl.load_workbook(path)
+            if sheet_name in wb.sheetnames:
+                sheet = wb[sheet_name]
+                wb.remove(sheet)
+                wb.save(path)
+        except Exception as e:
+            print(f"Error occurred while removing the sheet: {e}")
+            return
+        try:
+            with pd.ExcelWriter(path, mode='a') as writer:
+                df.to_excel(writer, sheet_name=sheet_name)
+                workbook = writer.book
+                worksheet = workbook[sheet_name]
+
+                # Freeze the top row
+                worksheet.freeze_panes = "A2"
+            print(f"The sheet '{sheet_name}' created successfully")
+        except Exception as e:
+            print(f"Error occurred while creating the sheet: {e}")
     else:
         print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
