@@ -5,6 +5,14 @@ from PyQt5.QtGui import QFont
 
 class AssignValuesWindow(QWidget):
     def __init__(self, control_list, inhibitor_list, cell_name):
+        """
+        This function initializes an instance of the AssignValuesWindow class.
+
+        Params:
+            control_list (list): The initial values for the left list.
+            inhibitor_list (list): The initial values for the right list.
+            cell_name (str): The name of the cell for which the groups are being assigned.
+        """
         super().__init__()
 
         self.result = None
@@ -104,6 +112,14 @@ class AssignValuesWindow(QWidget):
         self.apply_button.setStyleSheet(button_style)
 
     def on_list_item_clicked(self, item):
+        """
+        This method is triggered when an item in either the left or right list is clicked.
+        It ensures that only one item can be selected at a time in either list.
+
+        Params:
+            item (QListWidgetItem): The item that was clicked in the list.
+        """
+
         sender_list = self.sender()  # Get the list that sent the signal
         other_list = self.left_list if sender_list is self.right_list else self.right_list
 
@@ -114,7 +130,10 @@ class AssignValuesWindow(QWidget):
         sender_list.setCurrentItem(item)
 
     def move_right(self):
-        # Move the selected item(s) from the left list to the right list
+        """
+        This method moves the selected item(s) from the left list to the right list.
+        """
+
         selected_items = self.left_list.selectedItems()
         if not selected_items:
             return
@@ -131,6 +150,9 @@ class AssignValuesWindow(QWidget):
         self.left_list.clearSelection()
 
     def move_left(self):
+        """
+                This method moves the selected item(s) from the right list to the left list.
+                """
         # Move the selected item(s) from the right list to the left list
         selected_items = self.right_list.selectedItems()
         if not selected_items:
@@ -148,6 +170,9 @@ class AssignValuesWindow(QWidget):
         self.right_list.clearSelection()
 
     def delete(self):
+        """
+            This method delete the selected item from a list.
+            """
         # Remove the selected item(s) from both lists
         selected_left = self.left_list.selectedItems()
         selected_right = self.right_list.selectedItems()
@@ -163,6 +188,9 @@ class AssignValuesWindow(QWidget):
             self.right_list.takeItem(self.right_list.row(item))
 
     def reset(self):
+        """
+            This method reset the values to the initial values of each list.
+                """
         # Reset the lists to their initial state
         self.left_list.clear()
         self.right_list.clear()
@@ -170,6 +198,9 @@ class AssignValuesWindow(QWidget):
         self.right_list.addItems(self.inhibitor_list_default)
 
     def apply(self):
+        """
+          This method set the result for the selected values.
+                        """
         # Get the final state of the lists and return them as two separate lists
         left_values = [self.left_list.item(i).text() for i in range(self.left_list.count())]
         right_values = [self.right_list.item(i).text() for i in range(self.right_list.count())]
@@ -177,9 +208,16 @@ class AssignValuesWindow(QWidget):
         self.apply_clicked = True
         self.close()
 
-
-
     def closeEvent(self, event):
+        """
+    This method handles the close event when the user clicks on the exit button.
+
+    Params:
+        event (QCloseEvent): The close event object.
+
+    Returns:
+        None
+    """
         if not self.apply_clicked:
             reply = QMessageBox.question(self, 'Confirm Exit', 'Are you sure you want to exit?',
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)

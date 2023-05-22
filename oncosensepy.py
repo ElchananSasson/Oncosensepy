@@ -202,12 +202,8 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                     t, p = ttest_ind(df_first, df_second)
                 if sign_changed or (p <= p_value):
                     averages[col] = (df_first.mean(), df_second.mean())
-
-                    # add reason row
                     add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
                     add_res = add_res.rename(index={0: 'Reason'})
-
-                    # append the new row to df[[col]]
                     df_with_res_row = pd.concat([df[[col]], add_res])
                     dfs_to_concat.append(df_with_res_row)
 
@@ -234,11 +230,8 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                     columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
                     df_without_barcode = df.loc[df.index[:3], columns_to_select]
                     if df_without_barcode.shape[0] == 2:
-                        # Get the last row of df_without_barcode
                         last_row = df_without_barcode.iloc[-1]
-                        # Create a new DataFrame with the same columns as df_without_barcode
                         new_row = pd.DataFrame([last_row], columns=df_without_barcode.columns)
-                        # Concatenate the existing DataFrame with the new row
                         df_without_barcode = pd.concat([df_without_barcode, new_row], ignore_index=True)
                     compound_names.append('')
 
@@ -278,7 +271,6 @@ def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
     if control_list is None:
         control_list = ['CONTROL', 'DMSO', 'PBS']
 
-    # Filter the input dataframe to only include rows with the specified cell name
     new_df = df.loc[df['cell_line_name'] == cell_name]
 
     col_names = new_df.columns.tolist()
