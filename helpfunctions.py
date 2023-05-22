@@ -81,6 +81,7 @@ def plot_G_values(title, uid, values, save_path):
         plt.scatter([uid[i] for i in upper_edge_indices], [values[i] for i in upper_edge_indices], color='red')
 
     plt.savefig(save_path + '/' + f'{title}.SVG', dpi=300)
+    print(f"The SVG file '{title}' saved successfully")
     plt.close()
 
 
