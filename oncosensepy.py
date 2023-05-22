@@ -1,19 +1,13 @@
 import os
-import sys
-import openpyxl
-import itertools
 import numpy as np
 import pandas as pd
 import exceptions as e
 import helpfunctions as hf
 import validation as valid
-import matplotlib.pyplot as plt
 from scipy.stats import ttest_ind
-from PyQt5.QtWidgets import QApplication
-from groupSeperator import AssignValuesWindow
 
 
-def get_LG_data(data_set_path):
+def get_LGE_data(data_set_path):
     """
     The function reads Excel sheets ('L' and 'G') from the specified file path and returns clear DataFrames without
     missing values.
@@ -27,6 +21,7 @@ def get_LG_data(data_set_path):
     """
     l_df = pd.read_excel(data_set_path, sheet_name='L').fillna(0)
     g_df = pd.read_excel(data_set_path, sheet_name='G').fillna(0)
+    err_limit_lambda = pd.read_excel(data_set_path, sheet_name='ErrorLimitLambda').columns.values[0]
 
     l_df['compound_name'] = l_df['compound_name'].apply(lambda x: 'CONTROL' if x == 0 else x)
     l_df['time'] = l_df['time'].apply(lambda x: '0hr' if x == 0 else x)
@@ -36,76 +31,95 @@ def get_LG_data(data_set_path):
     if 0 in g_df['UID'].values:
         e.InvalidUIDException("UID has missing values")
 
-    return l_df, g_df
+    return l_df, g_df, err_limit_lambda
 
 
-def important_L(df, err_limit, threshold):
+def important_L(l_df, err_limit, threshold, new_sheet=False, sheet_name='important_L', data_path=''):
     """
-        This method returns a DataFrame with only the important columns. An important column is determined
-        by whether the number of cells whose value is higher in absolute value than the error limit,
-        is greater than or equal to the threshold.
+    This method returns a DataFrame with only the important columns. An important column is determined
+    by whether the number of cells whose value is higher in absolute value than the error limit,
+    is greater than or equal to the threshold.
 
-        Params:
-            df (pandas.DataFrame): The DataFrame to be checked.
-            err_limit (float): The error limit.
-            threshold (int): The number of significant values.
+    Params:
+        l_df (pandas.DataFrame): The DataFrame to be checked.
+        err_limit (float): The error limit.
+        threshold (int): The number of significant values.
+        new_sheet (bool): If True, creates a new sheet. Default is False.
+        sheet_name (str): The name of the sheet to be created. Default is 'important_L'.
+        path (str): The path where the new sheet will be created. Default is an empty string.
 
-        Returns:
-            pandas.DataFrame: The DataFrame with only the important columns selected.
+    Returns:
+        pandas.DataFrame: The DataFrame with only the important columns selected.
     """
-    valid.is_valid_L(df)
+    valid.is_valid_L(l_df)
     if threshold < 0:
         raise e.NegativeNumberException("Threshold should be positive number")
-    new_df = df.loc[:, :5].copy()
-    for i in range(1, len(df.columns) - 5):
+    new_df = l_df.loc[:, :5].copy()
+    for i in range(1, len(l_df.columns) - 5):
         count = 0
-        for cell in df[i]:
+        for cell in l_df[i]:
             if abs(cell) > err_limit:
                 count += 1
         if count >= threshold:
-            new_df[i] = df[i].copy()
+            new_df[i] = l_df[i].copy()
+
+    if new_sheet:
+        print(f"Creating '{sheet_name}'..")
+        hf.create_new_sheet(new_df, data_path, sheet_name)
+
     return new_df
 
 
-def filter_by_col(df, col, filter_list):
+def filter_by_col(df, col, filter_list, new_sheet=False, sheet_name='filter_by_col', data_path=''):
     """
-        This function filters data by a certain column and by a list of values it receives.
+    This function filters data by a certain column and by a list of values it receives.
 
-        Params:
-            df (pandas.DataFrame): The DataFrame to filter.
-            col (str): The column according to which the filtering will be performed.
-            filter_list (List): A list of values that we would like to appear in the selected column.
+    Params:
+        df (pandas.DataFrame): The DataFrame to filter.
+        col (str): The column according to which the filtering will be performed.
+        filter_list (list): A list of values that we would like to appear in the selected column.
+        new_sheet (bool): If True, creates a new sheet. Default is False.
+        sheet_name (str): The name of the sheet to be created. Default is 'filter_by_col'.
+        path (str): The path where the new sheet will be created. Default is an empty string.
 
-        Returns:
-            pandas.DataFrame: The DataFrame after filtering.
+    Returns:
+        pandas.DataFrame: The DataFrame after filtering.
     """
     valid.is_valid_L(df)
     filter_df = df.loc[(df[col].isin(filter_list))]
     if len(filter_df) == 0:
         print(f"There is no data to show by '{col}' filtering")
+
+    if new_sheet:
+        print(f"Creating '{sheet_name}'..")
+        hf.create_new_sheet(filter_df, data_path, sheet_name)
+
     return filter_df
 
 
-def sort_G_values(g_df, cols, path='', save=False):
+def sort_G_values(g_df, cols, save_plot_path='', save=False, new_sheet=False, sheet_name='Sorted_G', data_path=''):
     """
-        This function accepts columns representing processes and sorts for each process its proteins.
-        In addition, the function saves the plot of each process if the 'save' argument is set to True.
-        Otherwise, the plots will be displayed one by one.
+    This function accepts columns representing processes and sorts for each process its proteins.
+    In addition, the function saves the plot of each process if the 'save' argument is set to True.
+    Otherwise, the plots will be displayed one by one.
 
-        Params:
-            g_df (pandas.DataFrame): The G_values DataFrame.
-            cols (list): The process to sort its G_values.
-            path (str): The path to save the figures. If not specified or set to an empty string (''),
-                        the function will not save the plots.
-            save (bool): If True, the function will save the plot of each process in the specified path.
+    Params:
+        g_df (pandas.DataFrame): The G_values DataFrame.
+        cols (list): The process to sort its G_values.
+        save_plot_path (str): The path to save the figures. If not specified or set to an empty string (''),
+                              the function will not save the plots.
+        save (bool): If True, the function will save the plot of each process in the specified path.
+        new_sheet (bool): If True, creates a new sheet. Default is False.
+        sheet_name (str): The name of the sheet to be created. Default is 'Sorted_G'.
+        data_path (str): The path where the new sheet will be created. Default is an empty string.
 
-        Returns:
-            pandas.DataFrame: Sorted G_values.
+    Returns:
+        pandas.DataFrame: Sorted G_values.
     """
 
-    if path == '':
-        path = os.getcwd()
-    valid.is_valid_path(path)
+    if save_plot_path == '':
+        save_plot_path = os.getcwd()
+    valid.is_valid_path(save_plot_path)
     important_g = pd.DataFrame(columns=pd.MultiIndex.from_product([cols, ['UID', 'Effect']]))
     names_g, values_g = {}, {}
     for col in important_g.columns:
@@ -120,165 +134,103 @@ def sort_G_values(g_df, cols, path='', save=False):
             list_names_g = list(sorted_names_g.values())
 
             if save:
-                hf.plot_G_values(f'Process {col[0]}', list_names_g, list_values_g, path)
+                hf.plot_G_values(f'Process {col[0]}', list_names_g, list_values_g, save_plot_path)
 
             important_g[(col[0], 'UID')] = list_names_g
             important_g[col] = list_values_g
 
+    if new_sheet:
+        print(f"Creating '{sheet_name}'..")
+        hf.create_new_sheet(important_g, data_path, sheet_name)
+
     return important_g
 
 
-def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixed_col='time'):
-    """
-    Convert a Pandas dataframe to a dictionary of pairs of dataframes.
-
-    Params:
-        df (pandas.DataFrame): The input dataframe to convert.
-        cell_name (str): The name of the cell line to filter the dataframe by.
-        control_list (list): A list of control compound names.
-        inhibitor_list (list): A list of inhibitor compound names.
-        fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
-
-    Returns:
-        dict: A dictionary where each key is a tuple representing a pair of compounds, along with optional time points.
-              The corresponding value is a Pandas dataframe containing data for that pair.
-              The keys are generated by combining cell_name, compound names and time points.
-              There are two types of keys:
-              (1) Keys for pairs of control_list and inhibitor_list with same fixed_col.
-              (2) Keys for pairs of inhibitor_list with itself with different fixed_col.
-    """
-    # Filter the input dataframe to only include rows with the specified cell name
-    pairs_df = df.loc[df['cell_line_name'] == cell_name]
-
-    if control_list is None or inhibitor_list is None:
-        if control_list is None:
-            control_list = ['CONTROL', 'DMSO', 'PBS']
-
-        if inhibitor_list is None:
-            compound_name = pairs_df['compound_name'].unique()
-            inhibitor_list = list(set(compound_name) - set(control_list))
-        app = QApplication(sys.argv)
-        window = AssignValuesWindow(control_list, inhibitor_list)
-        window.show()
-        app.exec_()
-        control_list, inhibitor_list = window.result
-
-    full_list = control_list + inhibitor_list
-
-    # Filter the dataframe to only include rows with compound names in the full list
-    pairs_df = pairs_df.loc[pairs_df['compound_name'].isin(full_list)]
-
-    pairs_dict = {}
-    # Pairs of control_list and inhibitor_list with same fixed_col
-    for i, j in itertools.product(control_list, inhibitor_list):
-        for col in pairs_df[fixed_col].unique():
-            df_i_j_t = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == col)]
-            df_j_i_t = pairs_df.loc[(pairs_df['compound_name'] == j) & (pairs_df[fixed_col] == col)]
-            if not (df_i_j_t.empty or df_j_i_t.empty):
-                pairs_dict[(cell_name, i, j, col)] = pd.concat([df_i_j_t, df_j_i_t])
-
-    # Pairs of inhibitor_list with itself with different fixed_col
-    for i in inhibitor_list:
-        unique_fixed_col_i = pairs_df.loc[pairs_df['compound_name'] == i, fixed_col].unique()
-        for t1, t2 in itertools.combinations(unique_fixed_col_i, 2):
-            df_i_t1 = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == t1)]
-            df_i_t2 = pairs_df.loc[(pairs_df['compound_name'] == i) & (pairs_df[fixed_col] == t2)]
-            if not (df_i_t1.empty and df_i_t2.empty):
-                pairs_dict[(cell_name, i, i, t1, t2)] = pd.concat([df_i_t1, df_i_t2])
-
-    return pairs_dict
-
-
-def analyze_pairs(pairs_dict, p_value=0.05, fixed_col='time', display=False, only_avg=False):
+def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, only_avg=False, data_path=''):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
     Params:
-        pairs_dict (dict): A dictionary containing Pandas dataframes for each pair of compounds.
-                           The keys of the dictionary are tuples of two compound names.
+        important_l (pandas.DataFrame): The DataFrame with only the important columns.
+        cell_line_list (list): A list of cell lines to analyze.
+        fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
         p_value (float): The p-value threshold for determining whether the difference
                          between means is significant. Default is 0.05.
-        fixed_col (str): The name of the column that will remain fixed in each pair. Default is 'time'.
-        display (bool): If True, the function print the dictionary
-        only_avg (bool): If True, return only the averages for each col
-
-    Returns:
-        dict: A dictionary with the same keys as the input dictionary, but with updated dataframes.
-              If a key-value pair is removed from the dictionary because none of the columns pass the test,
-              it will not appear in the output dictionary.
+        only_avg (bool): If True, return only the averages for each column. Default is False.
+        data_path (str): The path where the updated dataframes will be saved. Default is an empty string.
     """
-    keys_to_remove, compound_names = [], []
-    averages = {}
-    for key, df in pairs_dict.items():
-        col_names = df.columns.tolist()
-        time_col_idx = col_names.index('time')
-        analysis_cols = [c for c in col_names[time_col_idx + 1:]]
+    for cell_line in cell_line_list:
+        print(f"analyzing '{cell_line}' cell line..")
+        pairs_dict = hf.pairs_df_to_dict(important_l, cell_line, fixed_col='time')
+        keys_to_remove, compound_names = [], []
+        averages = {}
+        for key, df in pairs_dict.items():
+            col_names = df.columns.tolist()
+            time_col_idx = col_names.index('time')
+            analysis_cols = [c for c in col_names[time_col_idx + 1:]]
 
-        dfs_to_concat = []
-        for col in analysis_cols:
-            if key[1] == key[2]:
-                df_first = df.loc[df[fixed_col] == key[3], col]
-                df_second = df.loc[df[fixed_col] == key[4], col]
+            dfs_to_concat = []
+            for col in analysis_cols:
+                if key[1] == key[2]:
+                    df_first = df.loc[df[fixed_col] == key[3], col]
+                    df_second = df.loc[df[fixed_col] == key[4], col]
+                else:
+                    df_first = df.loc[df['compound_name'] == key[1], col]
+                    df_second = df.loc[df['compound_name'] == key[2], col]
+
+                sign_changed = False
+                if np.sign(df_first.mean()) != np.sign(df_second.mean()):
+                    sign_changed = True
+
+                t, p = ttest_ind(df_first, df_second)
+                if sign_changed or (p <= p_value):
+                    averages[col] = (df_first.mean(), df_second.mean())
+
+                    # add reason row
+                    add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
+                    add_res = add_res.rename(index={0: 'Reason'})
+
+                    # append the new row to df[[col]]
+                    df_with_res_row = pd.concat([df[[col]], add_res])
+                    dfs_to_concat.append(df_with_res_row)
+
+            if len(dfs_to_concat) == 0:
+                keys_to_remove.append(key)
             else:
-                df_first = df.loc[df['compound_name'] == key[1], col]
-                df_second = df.loc[df['compound_name'] == key[2], col]
+                if only_avg:
+                    updated_dfs = []
+                    for df_col in dfs_to_concat:
+                        last_row = df_col.iloc[-1].values[0]
+                        compound_names = df['compound_name'].dropna().unique().tolist()
+                        if len(compound_names) == 1:
+                            compound_names.append(compound_names[0])
+                        new_col = pd.DataFrame(
+                            [averages[df_col.columns[0]][0], averages[df_col.columns[0]][1], last_row],
+                            columns=[df_col.columns[0]], index=[compound_names[0] + " AVG",
+                                                                compound_names[1] + " AVG", "Reason"])
 
-            sign_changed = False
-            if np.sign(df_first.mean()) != np.sign(df_second.mean()):
-                sign_changed = True
+                        updated_dfs.append(new_col)
+                    dfs_to_concat = updated_dfs
+                new_df = pd.concat(dfs_to_concat, axis=1)
+                new_df = new_df.reindex(sorted(new_df.columns), axis=1)
+                if only_avg:
+                    columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
+                    df_without_barcode = df.loc[df.index[:3], columns_to_select]
+                    compound_names.append('')
 
-            t, p = ttest_ind(df_first, df_second)
-            if sign_changed or (p <= p_value):
-                averages[col] = (df_first.mean(), df_second.mean())
+                    df_without_barcode['compound_name'] = compound_names
+                    df_without_barcode.index = [compound_names[0] + " AVG", compound_names[1] + " AVG", "Reason"]
+                    df_without_barcode.loc["Reason"] = np.nan
+                    pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
+                else:
+                    pairs_dict[key] = pd.concat(
+                        [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
 
-                # add reason row
-                add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
-                add_res = add_res.rename(index={0: 'Reason'})
+        for key in keys_to_remove:
+            pairs_dict.pop(key)
 
-                # append the new row to df[[col]]
-                df_with_res_row = pd.concat([df[[col]], add_res])
-                dfs_to_concat.append(df_with_res_row)
-
-        if len(dfs_to_concat) == 0:
-            keys_to_remove.append(key)
-        else:
-            if only_avg:
-                updated_dfs = []
-                for df_col in dfs_to_concat:
-                    last_row = df_col.iloc[-1].values[0]
-                    compound_names = df['compound_name'].dropna().unique().tolist()
-                    if len(compound_names) == 1:
-                        compound_names.append(compound_names[0])
-                    new_col = pd.DataFrame([averages[df_col.columns[0]][0], averages[df_col.columns[0]][1], last_row],
-                                           columns=[df_col.columns[0]], index=[compound_names[0] + " AVG",
-                                                                               compound_names[1] + " AVG", "Reason"])
-
-                    updated_dfs.append(new_col)
-                dfs_to_concat = updated_dfs
-            new_df = pd.concat(dfs_to_concat, axis=1)
-            new_df = new_df.reindex(sorted(new_df.columns), axis=1)
-            if only_avg:
-                columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
-                df_without_barcode = df.loc[df.index[:3], columns_to_select]
-                compound_names.append('')
-
-                df_without_barcode['compound_name'] = compound_names
-                df_without_barcode.index = [compound_names[0] + " AVG", compound_names[1] + " AVG", "Reason"]
-                df_without_barcode.loc["Reason"] = np.nan
-                pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
-            else:
-                pairs_dict[key] = pd.concat(
-                    [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
-
-    for key in keys_to_remove:
-        pairs_dict.pop(key)
-
-    if display:
-        pd.set_option("display.max_rows", None)  # Display all rows
-        pd.set_option("display.max_columns", None)  # Display all columns
-        print(pairs_dict)
-
-    return pairs_dict
+        pairs_df = hf.create_pairs_df(pairs_dict)
+        hf.create_new_sheet(pairs_df, data_path, cell_line)
 
 
 def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
@@ -321,82 +273,3 @@ def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
             new_df = new_df.drop(col, axis=1)
 
     return new_df
-
-
-def create_pairs_df(pairs_dict):
-    """
-    This function takes a dictionary of paired DataFrames and concatenates them into a single DataFrame for comparison.
-
-    Param:
-        pairs_dict (dict): A dictionary of paired DataFrames.
-
-    Returns:
-        pandas.DataFrame: A concatenated DataFrame of paired DataFrames for comparison.
-    """
-    comp_list = []
-    for i, df in enumerate(pairs_dict.values()):
-        comp_list.append(df)
-        if i < len(pairs_dict) - 1:
-            comp_list.append(pd.DataFrame(np.nan, index=['-'], columns=df.columns))
-
-    pairs_df = pd.concat(comp_list, sort=False)
-    return pairs_df
-
-
-def create_csv(df, name='default_name', path=None):
-    """
-        This method inserts the DataFrame into a csv file.
-
-        Params:
-            df (pandas.DataFrame): The DataFrame to insert into a new csv.
-            name (str): File name.
-            path (str): The file path.
-    """
-    if df.empty:
-        print(f"The csv file '{name}' was not created because the DataFrame is empty")
-        return
-
-    # Create the folder if it doesn't exist
-    elif path is None:
-        folder = 'csv'
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        path = folder + '/' + name + '.csv'  # Save the data frame to the CSV file
-        df.to_csv(path)
-    else:
-        df.to_csv(path + '/' + name + '.csv')
-    print(f"The csv '{name}' created successfully")
-
-
-def create_new_sheet(df, path, sheet_name):
-    """
-        This method inserts the DataFrame into a new sheet in an existing Excel file.
-
-        Params:
-            df (pandas.DataFrame): The DataFrame to insert into a new sheet.
-            path (str): The file path.
-            sheet_name (str): The name of the new sheet.
-    """
-    if not df.empty:
-        try:
-            wb = openpyxl.load_workbook(path)
-            if sheet_name in wb.sheetnames:
-                sheet = wb[sheet_name]
-                wb.remove(sheet)
-                wb.save(path)
-        except Exception as e:
-            print(f"Error occurred while removing the sheet: {e}")
-            return
-        try:
-            with pd.ExcelWriter(path, mode='a') as writer:
-                df.to_excel(writer, sheet_name=sheet_name)
-                workbook = writer.book
-                worksheet = workbook[sheet_name]
-
-                # Freeze the top row
-                worksheet.freeze_panes = "A2"
-            print(f"The sheet '{sheet_name}' created successfully")
-        except Exception as e:
-            print(f"Error occurred while creating the sheet: {e}")
-    else:
-        print(f"The sheet '{sheet_name}' was not created because the DataFrame is empty")
