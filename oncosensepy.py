@@ -170,6 +170,7 @@ def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, o
             analysis_cols = [c for c in col_names[time_col_idx + 1:]]
 
             dfs_to_concat = []
+
             for col in analysis_cols:
                 if key[1] == key[2]:
                     df_first = df.loc[df[fixed_col] == key[3], col]
@@ -181,8 +182,11 @@ def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, o
                 sign_changed = False
                 if np.sign(df_first.mean()) != np.sign(df_second.mean()):
                     sign_changed = True
-
-                t, p = ttest_ind(df_first, df_second)
+                if df_first.shape[0] == 1 or df_second.shape[0] == 1:
+                    p = p_value + 1
+                    # TODO schedule meeting with Nissim about it (the problem is that we have 1 value)
+                else:
+                    t, p = ttest_ind(df_first, df_second)
                 if sign_changed or (p <= p_value):
                     averages[col] = (df_first.mean(), df_second.mean())
 
@@ -216,6 +220,13 @@ def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, o
                 if only_avg:
                     columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
                     df_without_barcode = df.loc[df.index[:3], columns_to_select]
+                    if df_without_barcode.shape[0] == 2:
+                        # Get the last row of df_without_barcode
+                        last_row = df_without_barcode.iloc[-1]
+                        # Create a new DataFrame with the same columns as df_without_barcode
+                        new_row = pd.DataFrame([last_row], columns=df_without_barcode.columns)
+                        # Concatenate the existing DataFrame with the new row
+                        df_without_barcode = pd.concat([df_without_barcode, new_row], ignore_index=True)
                     compound_names.append('')
 
                     df_without_barcode['compound_name'] = compound_names
