@@ -1,10 +1,13 @@
 import os
+import sys
 import numpy as np
 import pandas as pd
 import exceptions as e
 import helpfunctions as hf
 import validation as valid
 from scipy.stats import ttest_ind
+from PyQt5.QtWidgets import QApplication
+from cellNamesGUI import AssignNamesValuesWindow
 
 
 def get_LGE_data(data_set_path):
@@ -146,7 +149,7 @@ def sort_G_values(g_df, cols, save_plot_path='', save=False, new_sheet=False, sh
     return important_g
 
 
-def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, only_avg=False, data_path=''):
+def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.05, only_avg=False, data_path=''):
     """
     This function analyzes pairs of compounds in a dictionary of Pandas dataframes.
 
@@ -159,6 +162,16 @@ def analyze_pairs(important_l, cell_line_list, fixed_col='time', p_value=0.05, o
         only_avg (bool): If True, return only the averages for each column. Default is False.
         data_path (str): The path where the updated dataframes will be saved. Default is an empty string.
     """
+
+    if cell_line_list is None:
+        cell_line_list = important_l['cell_line_name'].unique().tolist()
+        app_names = QApplication(sys.argv)
+        name_window = AssignNamesValuesWindow(cell_line_list)
+        name_window.show()
+        app_names.exec_()
+        cell_line_list = name_window.result
+        del app_names
+
     for cell_line in cell_line_list:
         print(f"analyzing '{cell_line}' cell line..")
         pairs_dict = hf.pairs_df_to_dict(important_l, cell_line, fixed_col='time')
