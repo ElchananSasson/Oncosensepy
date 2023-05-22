@@ -4,10 +4,12 @@ from PyQt5.QtGui import QFont
 
 
 class AssignValuesWindow(QWidget):
-    def __init__(self, control_list, inhibitor_list):
+    def __init__(self, control_list, inhibitor_list, cell_name):
         super().__init__()
 
+        self.result = None
         self.resize(500, 400)
+        self.setWindowTitle(cell_name + " groups:")
 
         font = QFont('sans-serif', 10)
 
@@ -111,7 +113,6 @@ class AssignValuesWindow(QWidget):
         # Select the clicked item in the sender list
         sender_list.setCurrentItem(item)
 
-
     def move_right(self):
         # Move the selected item(s) from the left list to the right list
         selected_items = self.left_list.selectedItems()
@@ -161,7 +162,7 @@ class AssignValuesWindow(QWidget):
         for item in selected_right:
             self.right_list.takeItem(self.right_list.row(item))
 
-    def reset(self, control_list):
+    def reset(self):
         # Reset the lists to their initial state
         self.left_list.clear()
         self.right_list.clear()
@@ -175,6 +176,8 @@ class AssignValuesWindow(QWidget):
         self.result = (left_values, right_values)
         self.apply_clicked = True
         self.close()
+
+
 
     def closeEvent(self, event):
         if not self.apply_clicked:
