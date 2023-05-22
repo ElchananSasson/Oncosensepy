@@ -5,6 +5,9 @@ from PyQt5.QtGui import QFont
 
 
 class AssignNamesValuesWindow(QWidget):
+    """
+            This function initializes an instance of the AssignValuesWindow class.
+            """
     def __init__(self, cell_line_list):
         super().__init__()
 
@@ -87,7 +90,10 @@ class AssignNamesValuesWindow(QWidget):
         self.apply_button.setStyleSheet(button_style)
 
     def delete(self):
-        # Remove the selected item(s) from list
+        """
+        This method delete the selected item from the list.
+         """
+
         selected_items = self.one_list.selectedItems()
 
         if not selected_items:
@@ -99,11 +105,16 @@ class AssignNamesValuesWindow(QWidget):
             self.one_list.takeItem(self.one_list.row(item))
 
     def reset(self):
-        # Reset the lists to their initial state
+        """
+                    This method reset the values to the initial values of each list.
+                        """
         self.one_list.clear()
         self.one_list.addItems(self.cell_names_list_default)
 
     def apply(self):
+        """
+                 This method set the result for the selected values.
+                               """
         # Get the final state of the lists and return them as two separate lists
         values = [self.one_list.item(i).text() for i in range(self.one_list.count())]
         self.result = values
@@ -111,6 +122,15 @@ class AssignNamesValuesWindow(QWidget):
         self.close()
 
     def closeEvent(self, event):
+        """
+          This method handles the close event when the user clicks on the exit button.
+
+          Params:
+              event (QCloseEvent): The close event object.
+
+          Returns:
+              None
+          """
         if not self.apply_clicked:
             reply = QMessageBox.question(self, 'Confirm Exit', 'Are you sure you want to exit?',
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)

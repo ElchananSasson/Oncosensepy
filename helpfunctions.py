@@ -23,7 +23,6 @@ def find_edges(list_names_g, list_values_g):
     if len(list_values_g) == 0:
         return [], []
 
-    # split the list into 2 lists
     half_ind = len(list_values_g) // 2
     first_half = list_values_g[:half_ind]
     second_half = list_values_g[half_ind:]
@@ -212,8 +211,6 @@ def create_new_sheet(df, path, sheet_name):
                 df.to_excel(writer, sheet_name=sheet_name)
                 workbook = writer.book
                 worksheet = workbook[sheet_name]
-
-                # Freeze the top row
                 worksheet.freeze_panes = "A2"
             print(f"The sheet '{sheet_name}' created successfully")
         except Exception as e:
