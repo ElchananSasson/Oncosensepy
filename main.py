@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # important_g = osp.sort_G_values(g_df, important_l.columns[6:], save_plot_path='', save=False, new_sheet=False,
     #                                 sheet_name='Sorted_G', data_path=data_set_path)
     #
-    analyzed_pairs_dict = osp.analyze_pairs(important_l, ['MCF7', 'SKBR3-MCH'], fixed_col='time', p_value=0.05,
+    analyzed_pairs_dict = osp.analyze_pairs(important_l, fixed_col='time', p_value=0.05,
                                             only_avg=True, data_path=data_set_path)
 
     # TODO - Elchanan - continue from here
