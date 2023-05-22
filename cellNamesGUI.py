@@ -13,7 +13,7 @@ class AssignNamesValuesWindow(QWidget):
 
         self.result = None
         self.resize(350, 400)
-        self.setWindowTitle("Cell Names:")
+        self.setWindowTitle("Cell Names")
 
         font = QFont('sans-serif', 10)
 

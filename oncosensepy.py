@@ -6,6 +6,7 @@ import exceptions as e
 import helpfunctions as hf
 import validation as valid
 from scipy.stats import ttest_ind
+from openpyxl import load_workbook
 from PyQt5.QtWidgets import QApplication
 from cellNamesGUI import AssignNamesValuesWindow
 
@@ -163,6 +164,9 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
         data_path (str): The path where the updated dataframes will be saved. Default is an empty string.
     """
 
+    workbook = load_workbook(filename=data_path)
+    sheet = workbook['ErrorLimitLambda']
+    error_value = sheet['A1'].value
     if cell_line_list is None:
         cell_line_list = important_l['cell_line_name'].unique().tolist()
         app_names = QApplication(sys.argv)
@@ -201,11 +205,12 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                 else:
                     t, p = ttest_ind(df_first, df_second)
                 if sign_changed or (p <= p_value):
-                    averages[col] = (df_first.mean(), df_second.mean())
-                    add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
-                    add_res = add_res.rename(index={0: 'Reason'})
-                    df_with_res_row = pd.concat([df[[col]], add_res])
-                    dfs_to_concat.append(df_with_res_row)
+                    if abs(df_first.mean()) > error_value or abs(df_second.mean() > error_value):
+                        averages[col] = (df_first.mean(), df_second.mean())
+                        add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
+                        add_res = add_res.rename(index={0: 'Reason'})
+                        df_with_res_row = pd.concat([df[[col]], add_res])
+                        dfs_to_concat.append(df_with_res_row)
 
             if len(dfs_to_concat) == 0:
                 keys_to_remove.append(key)
