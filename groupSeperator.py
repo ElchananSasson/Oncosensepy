@@ -17,7 +17,7 @@ class AssignValuesWindow(QWidget):
 
         self.result = None
         self.resize(500, 400)
-        self.setWindowTitle(cell_name + " groups:")
+        self.setWindowTitle(cell_name + " groups")
 
         font = QFont('sans-serif', 10)
 
