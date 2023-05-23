@@ -151,8 +151,10 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
     # Filter the input dataframe to only include rows with the specified cell name
     pairs_df = df.loc[df['cell_line_name'] == cell_name]
 
-    control_list = ['CONTROL', 'DMSO', 'PBS']
+    control_types = ['CONTROL', 'DMSO', 'PBS']
     compound_name = pairs_df['compound_name'].unique()
+
+    control_list = list(set(compound_name) & set(control_types))
     inhibitor_list = list(set(compound_name) - set(control_list))
 
     app = QApplication(sys.argv)
