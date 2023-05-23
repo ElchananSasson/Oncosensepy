@@ -1,13 +1,12 @@
-import sys
-
 from PyQt5.QtWidgets import QWidget, QListWidget, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QFont
 
 
 class AssignNamesValuesWindow(QWidget):
     """
-            This function initializes an instance of the AssignValuesWindow class.
-            """
+    This function initializes an instance of the AssignValuesWindow class.
+    """
+
     def __init__(self, cell_line_list):
         super().__init__()
 
@@ -120,15 +119,15 @@ class AssignNamesValuesWindow(QWidget):
 
     def reset(self):
         """
-                    This method reset the values to the initial values of each list.
-                        """
+        This method reset the values to the initial values of each list.
+        """
         self.one_list.clear()
         self.one_list.addItems(self.cell_names_list_default)
 
     def apply(self):
         """
-                 This method set the result for the selected values.
-                               """
+        This method set the result for the selected values.
+        """
         # Get the final state of the lists and return them as two separate lists
         values = [self.one_list.item(i).text() for i in range(self.one_list.count())]
         self.result = values
@@ -137,20 +136,20 @@ class AssignNamesValuesWindow(QWidget):
 
     def closeEvent(self, event):
         """
-          This method handles the close event when the user clicks on the exit button.
+        This method handles the close event when the user clicks on the exit button.
 
-          Params:
-              event (QCloseEvent): The close event object.
+        Params:
+            event (QCloseEvent): The close event object.
 
-          Returns:
-              None
-          """
+        Returns:
+            None
+        """
         if not self.apply_clicked:
             reply = QMessageBox.question(self, 'Confirm Exit', 'Are you sure you want to exit?',
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 # User confirmed exit, close the window
-                self.result = (self.cell_names_list_default)
+                self.result = self.cell_names_list_default
                 event.accept()
             else:
                 # User cancelled exit, ignore the close event
