@@ -28,6 +28,8 @@ def get_LGE_data(data_set_path):
     err_limit_lambda = pd.read_excel(data_set_path, sheet_name='ErrorLimitLambda').columns.values[0]
 
     l_df['compound_name'] = l_df['compound_name'].apply(lambda x: 'CONTROL' if x == 0 else x)
+    l_df['2D_3D'] = l_df['2D_3D'].apply(lambda x: '-0-' if x == 0 else x)
+    l_df['dosage'] = l_df['dosage'].apply(lambda x: '-0-' if x == 0 else x)
     l_df['time'] = l_df['time'].apply(lambda x: '0hr' if x == 0 else x)
     if 0 in l_df['cell_line_name'].values:
         e.InvalidCellLineException("Cell line name has missing values")
@@ -178,11 +180,13 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
 
     for cell_line in cell_line_list:
         print(f"analyzing '{cell_line}' cell line..")
-        pairs_dict = hf.pairs_df_to_dict(important_l, cell_line, fixed_col='time')
+        pairs_dict = hf.pairs_df_to_dict(important_l, cell_line, fixed_col=fixed_col)
+
         keys_to_remove, compound_names = [], []
         averages = {}
-        for key, df in pairs_dict.items():
-            col_names = df.columns.tolist()
+
+        for key, sub_df in pairs_dict.items():
+            col_names = sub_df.columns.tolist()
             time_col_idx = col_names.index('time')
             analysis_cols = [c for c in col_names[time_col_idx + 1:]]
 
@@ -190,14 +194,16 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
 
             for col in analysis_cols:
                 if key[1] == key[2]:
-                    df_first = df.loc[df[fixed_col] == key[3], col]
-                    df_second = df.loc[df[fixed_col] == key[4], col]
+                    df_first = sub_df.loc[sub_df[fixed_col] == key[3], col]
+                    df_second = sub_df.loc[sub_df[fixed_col] == key[4], col]
                 else:
-                    df_first = df.loc[df['compound_name'] == key[1], col]
-                    df_second = df.loc[df['compound_name'] == key[2], col]
+                    df_first = sub_df.loc[sub_df['compound_name'] == key[1], col]
+                    df_second = sub_df.loc[sub_df['compound_name'] == key[2], col]
 
                 sign_changed = False
-                if np.sign(df_first.mean()) != np.sign(df_second.mean()):
+                df_first_mean = df_first.mean()
+                df_second_mean = df_second.mean()
+                if np.sign(df_first_mean) != np.sign(df_second_mean):
                     sign_changed = True
                 if df_first.shape[0] == 1 or df_second.shape[0] == 1:
                     p = p_value + 1
@@ -205,11 +211,11 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                 else:
                     t, p = ttest_ind(df_first, df_second)
                 if sign_changed or (p <= p_value):
-                    if abs(df_first.mean()) > error_value or abs(df_second.mean() > error_value):
-                        averages[col] = (df_first.mean(), df_second.mean())
+                    if (abs(df_first_mean) > error_value) or (abs(df_second_mean) > error_value):
+                        averages[col] = (df_first_mean, df_second_mean)
                         add_res = pd.DataFrame([[hf.add_reason(sign_changed, p, p_value)]], columns=[col])
                         add_res = add_res.rename(index={0: 'Reason'})
-                        df_with_res_row = pd.concat([df[[col]], add_res])
+                        df_with_res_row = pd.concat([sub_df[[col]], add_res])
                         dfs_to_concat.append(df_with_res_row)
 
             if len(dfs_to_concat) == 0:
@@ -219,21 +225,34 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                     updated_dfs = []
                     for df_col in dfs_to_concat:
                         last_row = df_col.iloc[-1].values[0]
-                        compound_names = df['compound_name'].dropna().unique().tolist()
+                        compound_names = sub_df['compound_name'].dropna().unique().tolist()
                         if len(compound_names) == 1:
                             compound_names.append(compound_names[0])
                         new_col = pd.DataFrame(
                             [averages[df_col.columns[0]][0], averages[df_col.columns[0]][1], last_row],
-                            columns=[df_col.columns[0]], index=[compound_names[0] + " AVG",
-                                                                compound_names[1] + " AVG", "Reason"])
+                            columns=[df_col.columns[0]],
+                            index=[compound_names[0] + " AVG", compound_names[1] + " AVG", "Reason"])
 
                         updated_dfs.append(new_col)
                     dfs_to_concat = updated_dfs
+
                 new_df = pd.concat(dfs_to_concat, axis=1)
                 new_df = new_df.reindex(sorted(new_df.columns), axis=1)
+
                 if only_avg:
-                    columns_to_select = ['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']
-                    df_without_barcode = df.loc[df.index[:3], columns_to_select]
+                    columns_to_select = ['cell_line_name', 'compound_name', fixed_col]
+
+                    index_first_time = sub_df[fixed_col].str.extract(r'(\d+)', expand=False).astype(int).idxmin()
+                    index_second_time = sub_df[fixed_col].str.extract(r'(\d+)', expand=False).astype(int).idxmax()
+
+                    df_without_barcode = pd.DataFrame(columns=columns_to_select)
+                    df_without_barcode = pd.concat(
+                        [df_without_barcode] + [pd.DataFrame(columns=df_without_barcode.columns)] * 3,
+                        ignore_index=True)
+
+                    df_without_barcode.loc[0] = sub_df.loc[index_first_time, columns_to_select]
+                    df_without_barcode.loc[1] = sub_df.loc[index_second_time, columns_to_select]
+
                     if df_without_barcode.shape[0] == 2:
                         last_row = df_without_barcode.iloc[-1]
                         new_row = pd.DataFrame([last_row], columns=df_without_barcode.columns)
@@ -246,13 +265,18 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                     pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
                 else:
                     pairs_dict[key] = pd.concat(
-                        [df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df], axis=1)
+                        [sub_df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df],
+                        axis=1)
 
         for key in keys_to_remove:
             pairs_dict.pop(key)
 
         pairs_df = hf.create_pairs_df(pairs_dict)
-        hf.create_new_sheet(pairs_df, data_path, cell_line)
+        sheet_name = cell_line + "_FULL"
+        if only_avg:
+            sheet_name = cell_line + "_avg_by_" + fixed_col
+
+        hf.create_new_sheet(pairs_df, data_path, sheet_name)
 
 
 def analyze_control_treatment(df, cell_name, control_list=None, p_value=0.05):
