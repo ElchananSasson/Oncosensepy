@@ -4,13 +4,13 @@ import os
 
 def is_valid_L(df):
     """
-        This method checks whether the DataFrame is in the appropriate format.
+    This method checks whether the DataFrame is in the appropriate format.
 
-        Arguments:
-            df (pandas.DataFrame): The DataFrame to be checked.
+    Param:
+        df (pandas.DataFrame): The DataFrame to be checked.
 
-        Returns:
-            bool: True if valid, throw an exception otherwise.
+    Returns:
+        bool: True if valid, throw an exception otherwise.
     """
     if df.columns[0] != 'barcode':
         raise e.InvalidDataSetException("column 0 should be 'barcode'")
@@ -29,14 +29,14 @@ def is_valid_L(df):
 
 def is_valid_path(path, directory=True):
     """
-        This method checks whether the DataFrame is in the appropriate format.
+    This method checks whether the DataFrame is in the appropriate format.
 
-        Arguments:
-            path (str): The path to be checked.
-            directory (bool): Default ia True. If the path is directory - fill True, otherwise - False.
+    Params:
+        path (str): The path to be checked.
+        directory (bool): Default ia True. If the path is directory - fill True, otherwise - False.
 
-        Returns:
-            bool: True if valid, throw an exception otherwise.
+    Returns:
+        bool: True if valid, throw an exception otherwise.
     """
     if not os.path.exists(path):
         raise e.InvalidPathException(f"The path '{path}' didn't exist")
@@ -48,21 +48,15 @@ def is_valid_path(path, directory=True):
 
 def is_valid_G(df):
     """
-        This method checks whether the DataFrame is in the appropriate format.
+    This method checks whether the DataFrame is in the appropriate format.
 
-        Arguments:
-            df (pandas.DataFrame): The DataFrame to be checked.
+    Param:
+        df (pandas.DataFrame): The DataFrame to be checked.
 
-        Returns:
-            bool: True if valid, throw an exception otherwise.
+    Returns:
+        bool: True if valid, throw an exception otherwise.
     """
     if df.columns[0] != 'UID':
         raise e.InvalidDataSetException("column 0 should be 'UID'")
 
     return True
-
-
-def is_cols_in_df(df, cols_list):
-    all_exist = all(col in df.columns for col in cols_list)
-    if not all_exist:
-        raise e.InvalidColumnsException("One or more columns do not exist in data")

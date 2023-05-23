@@ -11,14 +11,14 @@ from groupSeperator import AssignValuesWindow
 
 def find_edges(list_names_g, list_values_g):
     """
-       The function finds the start and end edges of a graph represented as a DataFrame.
+    The function finds the start and end edges of a graph represented as a DataFrame.
 
-       Params:
-           list_values_g(List[float]): The list of the values
-           list_names_g(List[str]): The list of the names of the proteins
+    Params:
+        list_values_g(List[float]): The list of the values
+        list_names_g(List[str]): The list of the names of the proteins
 
-       Returns:
-           Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
+    Returns:
+        Tuple[List[str], List[str]]: A tuple containing the start and end edges of the graph as lists of strings.
     """
     if len(list_values_g) == 0:
         return [], []
@@ -52,14 +52,14 @@ def find_edges(list_names_g, list_values_g):
 
 def plot_G_values(title, uid, values, save_path):
     """
-        This function accepts columns representing processes and sorts for each process its proteins.
-        In addition, the function saves the plot of process
+    This function accepts columns representing processes and sorts for each process its proteins.
+    In addition, the function saves the plot of process
 
-        Params:
-            title (str): The plot title.
-            uid (list): The sorted list of G_UID.
-            values (list): The sorted list of G_values.
-            save_path (str): The path to save the figures, if None the plots will be displayed one by one
+    Params:
+        title (str): The plot title.
+        uid (list): The sorted list of G_UID.
+        values (list): The sorted list of G_values.
+        save_path (str): The path to save the figures, if None the plots will be displayed one by one
     """
     valid.is_valid_path(save_path)
 
@@ -86,19 +86,19 @@ def plot_G_values(title, uid, values, save_path):
 
 def add_reason(sign_changed, p, p_value):
     """
-        Adds a reason row to a Pandas DataFrame indicating the result of the analysis.
+    Adds a reason row to a Pandas DataFrame indicating the result of the analysis.
 
-        Params:
-            df (DataFrame): The input DataFrame.
-            col (str): The name of the column in the DataFrame to add the reason row.
-            total_avg (float): The average value calculated for the column across groups.
-            p (float): The p-value calculated for the statistical test.
-            p_value (float): The p-value threshold for determining significance.
-            col_len (int): The length of the column.
+    Params:
+        df (DataFrame): The input DataFrame.
+        col (str): The name of the column in the DataFrame to add the reason row.
+        total_avg (float): The average value calculated for the column across groups.
+        p (float): The p-value calculated for the statistical test.
+        p_value (float): The p-value threshold for determining significance.
+        col_len (int): The length of the column.
 
-        Returns:
-            pandas.DataFrame: The input DataFrame with the reason row added.
-        """
+    Returns:
+        pandas.DataFrame: The input DataFrame with the reason row added.
+    """
     if sign_changed and (p <= p_value):
         return "P-Value and Sign change"
 
@@ -129,7 +129,7 @@ def create_pairs_df(pairs_dict):
     return pairs_df
 
 
-def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixed_col='time'):
+def pairs_df_to_dict(df, cell_name, fixed_col='time'):
     """
     Convert a Pandas dataframe to a dictionary of pairs of dataframes.
 
@@ -191,12 +191,12 @@ def pairs_df_to_dict(df, cell_name, control_list=None, inhibitor_list=None, fixe
 
 def create_new_sheet(df, path, sheet_name):
     """
-        This method inserts the DataFrame into a new sheet in an existing Excel file.
+    This method inserts the DataFrame into a new sheet in an existing Excel file.
 
-        Params:
-            df (pandas.DataFrame): The DataFrame to insert into a new sheet.
-            path (str): The file path.
-            sheet_name (str): The name of the new sheet.
+    Params:
+        df (pandas.DataFrame): The DataFrame to insert into a new sheet.
+        path (str): The file path.
+        sheet_name (str): The name of the new sheet.
     """
     if not df.empty:
         try:
