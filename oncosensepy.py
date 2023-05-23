@@ -265,7 +265,7 @@ def analyze_pairs(important_l, cell_line_list=None, fixed_col='time', p_value=0.
                     pairs_dict[key] = pd.concat([df_without_barcode, new_df], axis=1)
                 else:
                     pairs_dict[key] = pd.concat(
-                        [sub_df[['barcode', 'cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df],
+                        [sub_df[['cell_line_name', 'compound_name', '2D_3D', 'dosage', 'time']], new_df],
                         axis=1)
 
         for key in keys_to_remove:
