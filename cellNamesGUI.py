@@ -84,10 +84,24 @@ class AssignNamesValuesWindow(QWidget):
                         cursor:pointer;
                     }
                 """
+        apply_style = """
+                    QPushButton {
+                        border: 1px solid black;
+                        color: black;
+                        border-radius: 5px;
+                        padding: 5px;
+                        font-family: sans-serif
+
+                    }
+                    QPushButton:hover {
+                        background-color: #00ff80;
+                        cursor:pointer;
+                    }
+                """
 
         self.delete_button.setStyleSheet(delete_style)
         self.reset_button.setStyleSheet(button_style)
-        self.apply_button.setStyleSheet(button_style)
+        self.apply_button.setStyleSheet(apply_style)
 
     def delete(self):
         """
